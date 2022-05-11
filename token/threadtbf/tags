@@ -1,0 +1,49 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+AlarmExit	Mtbf.cpp	/^bool AlarmExit 	= false;$/;"	v
+BROADCAST	Mtbf.cpp	/^	BROADCAST,$/;"	e	enum:__anon1	file:
+DESTROY	Mtbf.cpp	/^	DESTROY$/;"	e	enum:__anon1	file:
+EndPro	Mtbf.cpp	/^	static void EndPro(int s)$/;"	f	struct:MGroupBase
+INIT	Mtbf.cpp	/^	INIT = 0X00000001UL,$/;"	e	enum:__anon1	file:
+MDATA	Mtbf.cpp	/^MDATA(Mtbf)$/;"	f
+MDATA	Mtbf.h	3;"	d
+MGroupBase	Mtbf.cpp	/^	MGroupBase()$/;"	f	struct:MGroupBase
+MGroupBase	Mtbf.cpp	/^struct MGroupBase$/;"	s	file:
+MGroupExit	Mtbf.cpp	/^bool MGroupExit = false;$/;"	v
+MMAXGROUP	Mtbf.cpp	18;"	d	file:
+MMAXTOKENS	Mtbf.h	4;"	d
+MainMtbfGroup	Mtbf.cpp	/^} MainMtbfGroup;$/;"	v	typeref:struct:MGroupBase
+Mtbf	Mtbf.cpp	/^MDATA(Mtbf);$/;"	v
+Mtbf	Mtbf.cpp	/^Mtbf::Mtbf(){}$/;"	f	class:Mtbf
+Mtbf	Mtbf.cpp	/^Mtbf::Mtbf(int s, int *pos, int tokens)$/;"	f	class:Mtbf
+Mtbf	Mtbf.h	/^MDATA(Mtbf);$/;"	v
+Mtbf	Mtbf.h	/^class Mtbf$/;"	c
+MtbfGroup	Mtbf.cpp	/^	Mtbf* MtbfGroup[MMAXGROUP];$/;"	m	struct:MGroupBase	file:
+Mtbfcond	Mtbf.cpp	/^	pthread_cond_t Mtbfcond;\/\/条件变量$/;"	m	struct:MGroupBase	file:
+Mtbfcond_tokenchange	Mtbf.cpp	/^	pthread_cond_t Mtbfcond_tokenchange;$/;"	m	struct:MGroupBase	file:
+Mtbflock	Mtbf.cpp	/^	pthread_mutex_t Mtbflock;\/\/互斥量$/;"	m	struct:MGroupBase	file:
+SIGNAL	Mtbf.cpp	/^	SIGNAL,$/;"	e	enum:__anon1	file:
+TIMEDWAIT	Mtbf.cpp	/^	TIMEDWAIT,$/;"	e	enum:__anon1	file:
+TbfStart	Mtbf.cpp	/^int Mtbf::TbfStart()$/;"	f	class:Mtbf
+Tbfstop	Mtbf.cpp	/^int Mtbf::Tbfstop()$/;"	f	class:Mtbf
+WAIT	Mtbf.cpp	/^	WAIT,$/;"	e	enum:__anon1	file:
+abstime	Mtbf.cpp	/^	struct timespec abstime;\/\/设置条件变量的延时$/;"	m	struct:MGroupBase	typeref:struct:MGroupBase::timespec	file:
+baseptr	Mtbf.cpp	/^struct MGroupBase *baseptr;$/;"	v	typeref:struct:MGroupBase
+condattr	Mtbf.cpp	/^	pthread_condattr_t condattr;\/\/设置条件变量的属性$/;"	m	struct:MGroupBase	file:
+d	Mtbf.h	/^	MDATA(Mtbf) *d;$/;"	m	class:Mtbf
+destoryToken	Mtbf.cpp	/^int  Mtbf::destoryToken()$/;"	f	class:Mtbf
+getFreePos	Mtbf.cpp	/^	int getFreePos(Mtbf* tbf)$/;"	f	struct:MGroupBase
+getVailTokens	Mtbf.cpp	/^int  Mtbf::getVailTokens(int s)$/;"	f	class:Mtbf
+main	main.cpp	/^int main()$/;"	f
+pushCondWork	Mtbf.cpp	/^	int pushCondWork(uint64_t threadnum, bool timeout = true)$/;"	f	struct:MGroupBase
+pushTbf	Mtbf.cpp	/^void Mtbf::pushTbf(void *p)$/;"	f	class:Mtbf
+pushTokens	Mtbf.cpp	/^int  Mtbf::pushTokens(int tokens)$/;"	f	class:Mtbf
+setWaitClock	Mtbf.cpp	/^	struct timespec* setWaitClock()$/;"	f	struct:MGroupBase
+sigoldaction	Mtbf.cpp	/^struct sigaction sigoldaction;$/;"	v	typeref:struct:sigaction
+timeout	Mtbf.cpp	/^	struct timeval timeout;$/;"	m	struct:MGroupBase	typeref:struct:MGroupBase::timeval	file:
+~MGroupBase	Mtbf.cpp	/^	~MGroupBase()$/;"	f	struct:MGroupBase
+~Mtbf	Mtbf.cpp	/^Mtbf::~Mtbf()$/;"	f	class:Mtbf
