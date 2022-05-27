@@ -1,0 +1,68 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+BUFFSIZE	relayer.cpp	16;"	d	file:
+GroupLock	relayer.cpp	/^pthread_mutex_t GroupLock = PTHREAD_MUTEX_INITIALIZER;$/;"	v
+JOBSMAX	relayer.h	5;"	d
+MDATA	relayer.cpp	/^MDATA(MRJobGroup)$/;"	f
+MDATA	relayer.cpp	/^MDATA(MRelayer)$/;"	f
+MDATA	relayer.h	4;"	d
+MRJobGroup	relayer.cpp	/^MRJobGroup::MRJobGroup()$/;"	f	class:MRJobGroup
+MRJobGroup	relayer.h	/^class MRJobGroup$/;"	c
+MRelAddJob	relayer.cpp	/^int MRJobGroup::MRelAddJob(MRelayer* sjob, MRelayer* djob)$/;"	f	class:MRJobGroup
+MRelAddJob	relayer.cpp	/^int MRJobGroup::MRelAddJob(int fd1, int fd2)$/;"	f	class:MRJobGroup
+MRelCanelJob	relayer.cpp	/^int MRJobGroup::MRelCanelJob(int rd)$/;"	f	class:MRJobGroup
+MRelJobStat	relayer.cpp	/^int MRJobGroup::MRelJobStat(int rd, struct MRelStatSt* Jobstat)$/;"	f	class:MRJobGroup
+MRelStatSt	relayer.h	/^struct MRelStatSt$/;"	s
+MRelWaitJob	relayer.cpp	/^int MRJobGroup::MRelWaitJob(int rd, struct MRelStatSt* jobstat)$/;"	f	class:MRJobGroup
+MRelayer	relayer.cpp	/^MRelayer::MRelayer(int sfd,int dfd)$/;"	f	class:MRelayer
+MRelayer	relayer.h	/^class MRelayer$/;"	c
+RelFsmStat	relayer.cpp	/^struct RelFsmStat$/;"	s	file:
+RelJobStat	relayer.cpp	/^struct RelJobStat$/;"	s	file:
+STATE_AUTO	relayer.cpp	/^	STATE_AUTO,$/;"	e	enum:__anon2	file:
+STATE_CANCEL	relayer.h	/^	STATE_CANCEL,$/;"	e	enum:__anon1
+STATE_Ex	relayer.cpp	/^	STATE_Ex,$/;"	e	enum:__anon2	file:
+STATE_OVER	relayer.h	/^	STATE_OVER$/;"	e	enum:__anon1
+STATE_R	relayer.cpp	/^	STATE_R = 0x00000001UL,$/;"	e	enum:__anon2	file:
+STATE_RUNNING	relayer.h	/^	STATE_RUNNING = 0x00000001UL,$/;"	e	enum:__anon1
+STATE_T	relayer.cpp	/^	STATE_T$/;"	e	enum:__anon2	file:
+STATE_W	relayer.cpp	/^	STATE_W,$/;"	e	enum:__anon2	file:
+baseptr	relayer.cpp	/^MRJobGroup *baseptr = nullptr;$/;"	v
+buff	relayer.cpp	/^	char buff[BUFFSIZE];$/;"	m	struct:RelFsmStat	file:
+count	relayer.cpp	/^	u_int64_t count;$/;"	m	struct:RelFsmStat	file:
+cout12	relayer.h	/^	u_int64_t cout12, cout21;$/;"	m	struct:MRelStatSt
+cout21	relayer.h	/^	u_int64_t cout12, cout21;$/;"	m	struct:MRelStatSt
+d	relayer.h	/^	MDATA(MRJobGroup) *d;$/;"	m	class:MRJobGroup
+d	relayer.h	/^	MDATA(MRelayer) *d;$/;"	m	class:MRelayer
+dfd	relayer.cpp	/^	int dfd;$/;"	m	struct:RelFsmStat	file:
+endT	relayer.cpp	/^	struct timeval startT, endT;$/;"	m	struct:RelJobStat	typeref:struct:RelJobStat::	file:
+endT	relayer.h	/^	struct timeval startT, endT;$/;"	m	struct:MRelStatSt	typeref:struct:MRelStatSt::
+errstr	relayer.cpp	/^	std::string errstr;$/;"	m	struct:RelFsmStat	file:
+fd1	relayer.cpp	/^	int fd1, fd2;$/;"	m	struct:RelJobStat	file:
+fd1	relayer.h	/^	int fd1;$/;"	m	struct:MRelStatSt
+fd2	relayer.cpp	/^	int fd1, fd2;$/;"	m	struct:RelJobStat	file:
+fd2	relayer.h	/^	int fd2;$/;"	m	struct:MRelStatSt
+fsm12	relayer.cpp	/^	struct RelFsmStat* fsm12, *fsm21;$/;"	m	struct:RelJobStat	typeref:struct:RelJobStat::RelFsmStat	file:
+fsm21	relayer.cpp	/^	struct RelFsmStat* fsm12, *fsm21;$/;"	m	struct:RelJobStat	typeref:struct:RelJobStat::	file:
+ishasp	relayer.cpp	/^	bool ishasp:1;$/;"	m	struct:RelJobStat	file:
+isvaild	relayer.h	/^	bool isvaild:1;$/;"	m	struct:MRelStatSt
+job_stat	relayer.cpp	/^	u_int64_t job_stat;$/;"	m	struct:RelJobStat	file:
+len	relayer.cpp	/^	int len;$/;"	m	struct:RelFsmStat	file:
+main	main.cpp	/^int main()$/;"	f
+oldfd1	relayer.cpp	/^	int oldfd1, oldfd2;$/;"	m	struct:RelJobStat	file:
+oldfd2	relayer.cpp	/^	int oldfd1, oldfd2;$/;"	m	struct:RelJobStat	file:
+operator []	relayer.cpp	/^struct MRelStatSt MRJobGroup::operator[](int rd)$/;"	f	class:MRJobGroup
+parent	relayer.cpp	/^	MDATA(MRelayer) *parent;$/;"	m	struct:RelFsmStat	file:
+pos	relayer.cpp	/^	int pos;$/;"	m	struct:RelFsmStat	file:
+rd	relayer.cpp	/^	int rd;$/;"	m	struct:RelJobStat	file:
+rd	relayer.h	/^	int rd;	$/;"	m	class:MRelayer
+sfd	relayer.cpp	/^	int sfd;$/;"	m	struct:RelFsmStat	file:
+startT	relayer.cpp	/^	struct timeval startT, endT;$/;"	m	struct:RelJobStat	typeref:struct:RelJobStat::timeval	file:
+startT	relayer.h	/^	struct timeval startT, endT;$/;"	m	struct:MRelStatSt	typeref:struct:MRelStatSt::timeval
+state	relayer.cpp	/^	u_int64_t state;$/;"	m	struct:RelFsmStat	file:
+state	relayer.h	/^	u_int64_t state;$/;"	m	struct:MRelStatSt
+~MRJobGroup	relayer.cpp	/^MRJobGroup::~MRJobGroup()$/;"	f	class:MRJobGroup
+~MRelayer	relayer.cpp	/^MRelayer::~MRelayer()$/;"	f	class:MRelayer
