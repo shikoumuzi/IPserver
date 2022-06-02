@@ -1,6 +1,6 @@
 
 relayer: relayer.o main.o
-	g++ -std=c++2a  $^ -pthread -o $@
+	g++ -g -std=c++2a  $^ -pthread -lpthread -o $@
 	ctags -R
 
 clean: 

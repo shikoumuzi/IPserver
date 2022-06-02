@@ -1,6 +1,6 @@
 #include<stdio.h>
 #include<stdlib.h>
-
+#include<iostream>
 #define MDATA(classname) class classname##Mdata
 #define JOBSMAX 1024
 enum
@@ -9,6 +9,12 @@ enum
 	STATE_CANCEL,
 	STATE_OVER
 };
+
+template<typename T>
+void mcout(T output)
+{
+	std::cout << output << std::endl;
+}
 
 struct MRelStatSt
 {
