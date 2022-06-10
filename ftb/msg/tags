@@ -1,0 +1,115 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+DataPackage	protocol.h	/^union DataPackage$/;"	u
+Link	makefile	/^Link = -std=c++20 -pthread -lpthread$/;"	m
+MDATA	ftb_msg.cpp	/^MDATA(MMsg)$/;"	f
+MDATA	ftb_msg.h	5;"	d
+MMSGDATA	protocol.h	/^	MMSGDATA,$/;"	e	enum:__anon1
+MMSGEND	protocol.h	/^	MMSGEND$/;"	e	enum:__anon1
+MMSGMAX	ftb_msg.h	6;"	d
+MMSGPATH	protocol.h	/^	MMSGPATH = 0X00000001L,$/;"	e	enum:__anon1
+MMSG_AUTO	ftb_msg.h	11;"	d
+MMSG_CHSTAT	ftb_msg.h	15;"	d
+MMSG_KPSTAT	ftb_msg.h	14;"	d
+MMSG_PRIVATE	ftb_msg.h	9;"	d
+MMSG_PUBLIC	ftb_msg.h	10;"	d
+MMSG_RCV	ftb_msg.h	13;"	d
+MMSG_SEND	ftb_msg.h	12;"	d
+MMsg	ftb_msg.cpp	/^MMsg::MMsg():d(new MDATA(MMsg)(this)){}$/;"	f	class:MMsg
+MMsg	ftb_msg.h	/^MDATA(MMsg);$/;"	v
+MMsg	ftb_msg.h	/^class MMsg$/;"	c
+MMsgCtl	ftb_msg.cpp	/^int MMsg::MMsgCtl(int md, u_int64_t mod, void* data, void*retdata, long size, long mtype)$/;"	f	class:MMsg
+MMsgDestroy	ftb_msg.cpp	/^int MMsg::MMsgDestroy(int md)$/;"	f	class:MMsg
+MMsgFsm	ftb_msg.cpp	/^struct MMsgFsm$/;"	s	file:
+MMsgJob	ftb_msg.cpp	/^struct MMsgJob$/;"	s	file:
+MMsgRegister	ftb_msg.cpp	/^int MMsg:: MMsgRegister(u_int64_t mod, const char* pathname)$/;"	f	class:MMsg
+MPATHNAME	protocol.h	6;"	d
+MPROJ	protocol.h	7;"	d
+MPROTO	protocol.h	2;"	d
+MSTATE_AUTO	ftb_msg.cpp	/^	MSTATE_AUTO,$/;"	e	enum:__anon2	file:
+MSTATE_CANEL	ftb_msg.cpp	/^	MSTATE_CANEL,$/;"	e	enum:__anon3	file:
+MSTATE_Ex	ftb_msg.cpp	/^	MSTATE_Ex,$/;"	e	enum:__anon2	file:
+MSTATE_RCV	ftb_msg.cpp	/^	MSTATE_RCV = 0x00000001UL,$/;"	e	enum:__anon2	file:
+MSTATE_RUNNING	ftb_msg.cpp	/^	MSTATE_RUNNING = 0X00000010UL,$/;"	e	enum:__anon3	file:
+MSTATE_SND	ftb_msg.cpp	/^	MSTATE_SND,$/;"	e	enum:__anon2	file:
+MSTATE_T	ftb_msg.cpp	/^	MSTATE_T$/;"	e	enum:__anon2	file:
+MSTATE_WAIT	ftb_msg.cpp	/^	MSTATE_WAIT,$/;"	e	enum:__anon3	file:
+MsgData	protocol.h	/^struct MsgData$/;"	s
+MsgEnd	protocol.h	/^typedef struct MsgEnd$/;"	s
+MsgPath	protocol.h	/^typedef struct MsgPath$/;"	s
+MsgPosLock	ftb_msg.cpp	/^static pthread_mutex_t MsgPosLock = PTHREAD_MUTEX_INITIALIZER;$/;"	v	file:
+PATHSIZE	protocol.h	5;"	d
+_GLOBAL__sub_I__ZN4MMsgC2Ev	ftb_msg.s	/^_GLOBAL__sub_I__ZN4MMsgC2Ev:$/;"	l
+_GLOBAL__sub_I_main	receiver.s	/^_GLOBAL__sub_I_main:$/;"	l
+_Z41__static_initialization_and_destruction_0ii	ftb_msg.s	/^_Z41__static_initialization_and_destruction_0ii:$/;"	l
+_Z41__static_initialization_and_destruction_0ii	receiver.s	/^_Z41__static_initialization_and_destruction_0ii:$/;"	l
+_Z5mcoutIPKcEvT_	ftb_msg.s	/^_Z5mcoutIPKcEvT_:$/;"	l
+_Z5mcoutIPKcEvT_	receiver.s	/^_Z5mcoutIPKcEvT_:$/;"	l
+_Z5mcoutIiEvT_	ftb_msg.s	/^_Z5mcoutIiEvT_:$/;"	l
+_Z5mcoutImEvT_	ftb_msg.s	/^_Z5mcoutImEvT_:$/;"	l
+_ZN4MMsg11MMsgDestroyEi	ftb_msg.s	/^_ZN4MMsg11MMsgDestroyEi:$/;"	l
+_ZN4MMsg12MMsgRegisterEmPKc	ftb_msg.s	/^_ZN4MMsg12MMsgRegisterEmPKc:$/;"	l
+_ZN4MMsg7MMsgCtlEimPvS0_ll	ftb_msg.s	/^_ZN4MMsg7MMsgCtlEimPvS0_ll:$/;"	l
+_ZN4MMsgC2Ev	ftb_msg.s	/^_ZN4MMsgC2Ev:$/;"	l
+_ZN4MMsgD2Ev	ftb_msg.s	/^_ZN4MMsgD2Ev:$/;"	l
+_ZN7MMsgFsmC2Ev	ftb_msg.s	/^_ZN7MMsgFsmC2Ev:$/;"	l
+_ZN7MMsgFsmD2Ev	ftb_msg.s	/^_ZN7MMsgFsmD2Ev:$/;"	l
+_ZN7MMsgJobC2Ev	ftb_msg.s	/^_ZN7MMsgJobC2Ev:$/;"	l
+_ZN7MMsgJobD2Ev	ftb_msg.s	/^_ZN7MMsgJobD2Ev:$/;"	l
+_ZN9MMsgMdata9driverFsmEiPvbll	ftb_msg.s	/^_ZN9MMsgMdata9driverFsmEiPvbll:$/;"	l
+_ZN9MMsgMdataC2EP4MMsg	ftb_msg.s	/^_ZN9MMsgMdataC2EP4MMsg:$/;"	l
+_ZN9MMsgMdataD2Ev	ftb_msg.s	/^_ZN9MMsgMdataD2Ev:$/;"	l
+_ZN9__gnu_cxx11char_traitsIcE2eqERKcS3_	ftb_msg.s	/^_ZN9__gnu_cxx11char_traitsIcE2eqERKcS3_:$/;"	l
+_ZN9__gnu_cxx11char_traitsIcE6lengthEPKc	ftb_msg.s	/^_ZN9__gnu_cxx11char_traitsIcE6lengthEPKc:$/;"	l
+_ZN9__gnu_cxx17__is_null_pointerIKcEEbPT_	ftb_msg.s	/^_ZN9__gnu_cxx17__is_null_pointerIKcEEbPT_:$/;"	l
+_ZNSt11char_traitsIcE6lengthEPKc	ftb_msg.s	/^_ZNSt11char_traitsIcE6lengthEPKc:$/;"	l
+_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE12_Alloc_hiderD2Ev	ftb_msg.s	/^_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE12_Alloc_hiderD2Ev:$/;"	l
+_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE12_M_constructIPKcEEvT_S8_St20forward_iterator_tag	ftb_msg.s	/^_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE12_M_constructIPKcEEvT_S8_St20forward_iterator_tag:$/;"	l
+_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC2IS3_EEPKcRKS3_	ftb_msg.s	/^_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC2IS3_EEPKcRKS3_:$/;"	l
+_ZSt10__distanceIPKcENSt15iterator_traitsIT_E15difference_typeES3_S3_St26random_access_iterator_tag	ftb_msg.s	/^_ZSt10__distanceIPKcENSt15iterator_traitsIT_E15difference_typeES3_S3_St26random_access_iterator_tag:$/;"	l
+_ZSt19__iterator_categoryIPKcENSt15iterator_traitsIT_E17iterator_categoryERKS3_	ftb_msg.s	/^_ZSt19__iterator_categoryIPKcENSt15iterator_traitsIT_E17iterator_categoryERKS3_:$/;"	l
+_ZSt8distanceIPKcENSt15iterator_traitsIT_E15difference_typeES3_S3_	ftb_msg.s	/^_ZSt8distanceIPKcENSt15iterator_traitsIT_E15difference_typeES3_S3_:$/;"	l
+_ZTINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE	ftb_msg.s	/^_ZTINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE:$/;"	l
+_ZTSNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE	ftb_msg.s	/^_ZTSNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE:$/;"	l
+__data_type	protocol.h	/^concept __data_type = requires(T x)$/;"	v
+chinese	receiver.cpp	/^	int chinese;$/;"	m	struct:rdata	file:
+chinese	sender.cpp	/^	int chinese;$/;"	m	struct:rdata	file:
+d	ftb_msg.h	/^	MDATA(MMsg) *d;$/;"	m	class:MMsg
+data	protocol.h	/^        T data;$/;"	m	struct:MsgData
+endstr	protocol.h	/^	const char endstr[PATHSIZE];$/;"	m	struct:MsgEnd
+err	ftb_msg.cpp	/^	int err;$/;"	m	struct:MMsgFsm	file:
+errstate	ftb_msg.cpp	/^	u_int64_t errstate;$/;"	m	struct:MMsgFsm	file:
+errstr	ftb_msg.cpp	/^	std::string errstr;$/;"	m	struct:MMsgFsm	file:
+fmsg	makefile	/^fmsg = ftb_msg$/;"	m
+fsm	ftb_msg.cpp	/^	struct MMsgFsm fsm;$/;"	m	struct:MMsgJob	typeref:struct:MMsgJob::MMsgFsm	file:
+key	ftb_msg.cpp	/^	key_t key;$/;"	m	struct:MMsgJob	file:
+main	receiver.cpp	/^int main()$/;"	f
+main	receiver.s	/^main:$/;"	l
+main	sender.cpp	/^int main()$/;"	f
+math	receiver.cpp	/^	int math;$/;"	m	struct:rdata	file:
+math	sender.cpp	/^	int math;$/;"	m	struct:rdata	file:
+mcout	ftb_msg.h	/^void mcout(T data)$/;"	f
+md	ftb_msg.cpp	/^	int md;$/;"	m	struct:MMsgJob	file:
+msg_end_t	protocol.h	/^}__attribute__((packed)) msg_end_t;$/;"	t	typeref:struct:MsgEnd
+msg_path_t	protocol.h	/^}__attribute__((packed)) msg_path_t;$/;"	t	typeref:struct:MsgPath
+msgdata	protocol.h	/^	msg_data_t<T> msgdata;$/;"	m	union:DataPackage
+msgend	protocol.h	/^	msg_end_t msgend;$/;"	m	union:DataPackage
+msgid	ftb_msg.cpp	/^	int msgid;$/;"	m	struct:MMsgJob	file:
+msgpath	protocol.h	/^	msg_path_t msgpath;$/;"	m	union:DataPackage
+mtype	protocol.h	/^	long mtype; $/;"	m	struct:MsgData
+mtype	protocol.h	/^	long mtype;$/;"	m	struct:MsgEnd
+mtype	protocol.h	/^	long mtype;$/;"	m	struct:MsgPath
+mtype	protocol.h	/^	long mtype;$/;"	m	union:DataPackage
+parent	ftb_msg.cpp	/^	MDATA(MMsg) *parent;$/;"	m	struct:MMsgJob	file:
+pathname	protocol.h	/^	char pathname[PATHSIZE];$/;"	m	struct:MsgPath
+rdata	receiver.cpp	/^struct rdata$/;"	s	file:
+rdata	sender.cpp	/^struct rdata$/;"	s	file:
+rece	makefile	/^rece = receiver$/;"	m
+send	makefile	/^send = sender$/;"	m
+state	ftb_msg.cpp	/^	u_int64_t state;$/;"	m	struct:MMsgFsm	file:
+state	ftb_msg.cpp	/^	u_int64_t state;$/;"	m	struct:MMsgJob	file:
+~MMsg	ftb_msg.cpp	/^MMsg::~MMsg()$/;"	f	class:MMsg

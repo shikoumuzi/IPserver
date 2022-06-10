@@ -3,6 +3,9 @@
 #include<iostream>
 #define MDATA(classname) class classname##Mdata
 #define JOBSMAX 1024
+
+
+#define POLL
 enum
 {
 	STATE_RUNNING = 0x00000001UL,

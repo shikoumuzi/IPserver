@@ -199,37 +199,168 @@ public:
 			}
 		}
 	}
+public:
+	struct JobThreadId
+	{
+		JobThreadId(int rd, std::thread thrd)
+		{
+			//mcout("thread create");
+			this->thrd 	= std::move(thrd);
+			this->rd   	= rd;
+
+			mcout(this->thrd.get_id());
+			mcout("job init");
+		}
+		int rd;
+		std::thread thrd;
+	};
+#ifdef SELECT
+	struct selectfdid
+	{
+		selectfdid()
+		{
+			this->work = 0;
+		}
+		int work:1;
+		fd_set frset;
+		fd_set fwset;
+	};
+	using fdsetId = struct selectfdid;
+	struct selectfdid* fdsetsC[JOBSMAX];//frset and fwset in class
+	static void cleanDriverJobsThread(void* jobclass)
+	{
+		MRJobGroupMdata *job = (MRJobGroupMdata*)(jobclass);
+		for(auto& x : job->fdsetsC)
+		{
+			delete x;
+			x = nullptr;
+		}
+	}	
+
+#elif defined POLL
+	struct pollfdid
+	{
+		pollfdid()
+		{
+			this->work = 0;
+		}
+		struct pollfd pfds[2];
+		int work:1;
+	};
+	using fdsetId = struct pollfdid;
+
+	MRJobGroupMdata::pollfdid* pfdsc[JOBSMAX];//pfd in class
+	static void cleanDriverJobsThread(void *jobclass)
+	{
+		MRJobGroupMdata *job = (MRJobGroupMdata*)(jobclass);
+		pthread_mutex_unlock(&JobLock);
+		for(auto& x : job->pfdsc)
+		{
+			delete x;
+			x = nullptr;
+		}
+
+	}
+#elif defined EPOLL
+	static	void cleanDriverJobsThread(void *jobclass)
+	{
+		pthread_mutex_lock(&JobLock);
+	}
+#endif
+
 	static void* driverJobs(void* p)
 	{
 
-		#define POLL
 		MRJobGroupMdata *rjob = (MRJobGroupMdata*)(p);
 		pthread_mutex_lock(&JobLock);
-		
+							
+		#ifdef SELECT
+			//static fd_set frset, fwset;
+			MRJobGroupMdata::selectfdid** fdsets = rjob->fdsetsC;
+			for(int i = 0; i < JOBSMAX; ++i)
+			{
+				fdsets[i] = new MRJobGroupMdata::selectfdid();
+			}
+			pthread_cleanup_push(cleanDriverJobsThread, rjob);
+		#elif defined POLL
+			MRJobGroupMdata::pollfdid** pfds = rjob-> pfdsc;
+			for(int i = 0; i < JOBSMAX; ++i)
+			{
+				pfds[i] = new MRJobGroupMdata::pollfdid();
+			}
+			pthread_cleanup_push(cleanDriverJobsThread, rjob);
+		#elif defined EPOLL
+			pthread_cleanup_push(cleanDriverJobsThread, rjob);
+		#endif
+
 		while(1)
 		{
 			
 			for(int i = 0; i < JOBSMAX; ++i)
-			{
+			{	
+
+			#ifdef SELECT
+				int selectsid = 0;
+				for(; selectsid < JOBSMAX; ++selectsid)
+				{
+					if(fdsets[selectsid]->work == 0)
+					{
+						fdsets[selectsid]->work = 1;
+						break;
+					}
+				}
+			#elif defined POLL
+				int pfdsid = 0;
+				//找一个空位置来使用pollfd
+				for(; pfdsid < JOBSMAX; ++pfdsid)
+				{
+					if(pfds[pfdsid]->work == 0 )
+					{
+						pfds[pfdsid]->work = 1;
+						break;
+					}
+				}
+			#elif defined EPOLL
+				int epfd = epoll_create(10);
+				
+				struct epoll_event aev;//all epoll_data
+				aev.events = 0;
+				aev.data.fd = rjob->RJob[i]->fd1;
+				epoll_ctl(epfd, EPOLL_CTL_ADD, rjob->RJob[i]->fd1, &aev);
+
+				aev.events = 0;
+				aev.data.fd = rjob->RJob[i]->fd2;
+				epoll_ctl(epfd, EPOLL_CTL_ADD, rjob->RJob[i]->fd2, &aev);
+			#endif
 				if(rjob->RJob[i] != nullptr && rjob->RJob[i]->isthread == 0)
 				{
 					rjob->RJob[i]->isthread = 1;
-					rjob->Jobthread.push_back(std::thread([&rjob, i]{
-									
-					#ifdef SELECT
-						fd_set frset, fwset;
-					#elif defined POLL
-						struct pollfd pfd[2];
-					#elif defined EPOLL
 					
-					#endif
+				#ifdef SELECT
+					rjob->JobsThread.push_back(JobThreadId(i, 
+								std::thread([&rjob, &fdsets, i, selectsid]{  
+				#elif defined POLL
+					rjob->JobsThread.push_back(JobThreadId(i,
+								std::thread([&rjob, &pfds, i, pfdsid]{
+				#elif defined EPOLL
+					mcout(rjob);
+					mcout(epfd);
+					mcout(i);
+					rjob->JobsThread.push_back(JobThreadId(i, 
+								std::thread([epfd, i]{
+					//lamdba表达式以值传递传入的值是只读的	
+				#endif
+					MRJobGroupMdata *rjob = baseptr;
+					mcout(rjob);	
+					struct RelJobStat& job = *rjob->RJob[i];
 					mcout("thread create");
 					while(1){
 					if(rjob->RJob[i]->job_stat == STATE_RUNNING )
 					{
-					
-						struct RelJobStat& job = *rjob->RJob[i];
 					#ifdef SELECT
+						
+						fd_set& frset = fdsets[selectsid]->frset; 
+						fd_set& fwset = fdsets[selectsid]->fwset;	
 						//布置监视任务
 						FD_ZERO(&frset);
 						FD_ZERO(&fwset);
@@ -272,25 +403,26 @@ public:
 						}
 					#elif defined POLL
 						//布置监视任务
-							pfd[0].fd 	= job.fd1;
-							pfd[0].events 	= 0;
-							pfd[1].fd 	= job.fd2;
-							pfd[1].events 	= 0;
-							if(job.fsm12->state == STATE_R)
-								pfd[0].events |= POLLIN;
-							else if(job.fsm12->state == STATE_W)
-								pfd[0].events |= POLLOUT;
-							if(job.fsm21->state == STATE_R)
-								pfd[1].events |= POLLIN;
-							else if(job.fsm21->state == STATE_W)
-								pfd[1].events |= POLLOUT;
+						struct pollfd* pfdptr = pfds[pfdsid]->pfds;
+						pfdptr[0].fd 	= job.fd1;
+						pfdptr[0].events	= 0;
+						pfdptr[1].fd	= job.fd2;
+						pfdptr[1].events 	= 0;
+						if(job.fsm12->state == STATE_R)
+							pfdptr[0].events |= POLLIN;
+						else if(job.fsm12->state == STATE_W)
+							pfdptr[0].events |= POLLOUT;
+						if(job.fsm21->state == STATE_R)
+							pfdptr[1].events |= POLLIN;
+						else if(job.fsm21->state == STATE_W)
+							pfdptr[1].events |= POLLOUT;
 						
 
 						//监视
 						if(job.fsm12->state < STATE_AUTO 
 								|| job.fsm21->state < STATE_AUTO)
 						{
-							while((poll(pfd, 2, -1)) < 0)
+							while((poll(pfdptr, 2, -1)) < 0)
 							{
 							//poll相比于select的好处是，写入事件和返回事件分开存放
 							//所以不需要去绕大圈，一个小循环可以解决问题，
@@ -310,6 +442,51 @@ public:
 						}
 
 					#elif defined EPOLL
+						mcout("监视任务布置");	
+						struct epoll_event ev;
+						//memcpy(&ev, &aev, sizeof(struct epoll_event));	
+						ev.data.fd 	= job.fd1;
+						ev.events 	= 0;	
+						if(job.fsm12->state == STATE_R)
+							ev.events |= EPOLLIN;
+						else if(job.fsm12->state == STATE_W)
+							ev.events |= EPOLLOUT;
+
+						epoll_ctl(epfd, EPOLL_CTL_MOD, job.fd1, &ev);
+						
+						ev.data.fd 	= job.fd2;
+						ev.events 	= 0;	
+						if(job.fsm21->state == STATE_R)
+							ev.events |= EPOLLIN;
+						else if(job.fsm21->state == STATE_W)
+							ev.events |= EPOLLOUT;
+						
+						epoll_ctl(epfd, EPOLL_CTL_MOD, job.fd2, &ev);
+
+						if(job.fsm12->state < STATE_AUTO 
+								|| job.fsm21->state < STATE_AUTO)
+						{
+							while(epoll_wait(epfd, &ev, 1, -1) < 0)
+							{
+							//epoll相比于select的好处是，写入事件和返回事件分开存放
+							//所以不需要去绕大圈，一个小循环可以解决问题，
+							//不用重新布置监视任务
+							
+							//epoll和poll相比，其管理数组有内核管理
+
+								if(errno == EINTR)
+									continue;
+								else
+								{
+									perror("epoll() ");
+									throw std::string(strerror(errno));
+									abort();
+									break;
+								}
+							
+							}
+						}
+
 
 					#endif
 
@@ -326,16 +503,33 @@ public:
 								||job.fsm21->state > STATE_AUTO)
 							job.fsm21->parent->FsmDriver();
 					#elif defined POLL
-						if(pfd[0].revents & POLLIN || pfd[1].revents & POLLOUT
+						if(pfdptr[0].revents & POLLIN 
+								||pfdptr[1].revents & POLLOUT
 								||job.fsm12->state > STATE_AUTO 
 								||job.fsm21->state > STATE_AUTO)
 							job.fsm12->parent->FsmDriver();
-						if(pfd[1].revents & POLLIN || pfd[0].revents & POLLOUT
+						if(pfdptr[1].revents & POLLIN 
+								||pfdptr[0].revents & POLLOUT
 								||job.fsm12->state > STATE_AUTO
 								||job.fsm21->state > STATE_AUTO)
 							job.fsm21->parent->FsmDriver();
 
 					#elif defined EPOLL
+						if((ev.data.fd == job.fd1 
+									&& ev.events & EPOLLIN) 
+								|| (ev.data.fd == job.fd2
+									&& ev.events & EPOLLOUT)
+								||job.fsm12->state > STATE_AUTO 
+								||job.fsm21->state > STATE_AUTO)
+							job.fsm12->parent->FsmDriver();
+						if((ev.data.fd == job.fd2 
+									&& ev.events & EPOLLIN)
+								||(ev.data.fd == job.fd1 && 
+									ev.events & EPOLLOUT)
+								||job.fsm12->state > STATE_AUTO
+								||job.fsm21->state > STATE_AUTO)
+							job.fsm21->parent->FsmDriver();
+
 
 					#endif	
 
@@ -345,17 +539,27 @@ public:
 							job.job_stat = STATE_OVER;
 						}
 					}
-					}}));
+					}
+					})));
 				}
 			}
 	//		pthread_mutex_unlock(&JobLock);
 		
 			pthread_cond_wait(&rjob->AddJobCond, &JobLock);
 		}
-		for(auto& x : rjob->Jobthread)
+		for(auto& x : rjob->JobsThread)
 		{
-			x.join();
+			if(x.thrd.joinable())
+				x.thrd.join();
+			else
+				mcout("thread cannot join");
 		}
+	
+	
+		pthread_cleanup_pop(0);
+		//当参数为0时，为本线程调用pthread_exit或者其他线程调用取消函数的时候qizuoyong
+	
+	
 		return NULL;	
 	}
 	static void ModuleLoad(void)
@@ -374,10 +578,10 @@ public:
 	}
 	void ModuleUnload(void)
 	{
-		for(auto& x : this->Jobthread)
+		for(auto& x : this->JobsThread)
 		{
-			pthread_cancel(x.native_handle());
-			x.join();
+			pthread_cancel(x.thrd.native_handle());
+			x.thrd.join();
 		}
 		pthread_cond_destroy(&this->AddJobCond);
 		pthread_cancel(this->driverJob);
@@ -385,7 +589,7 @@ public:
 	}
 public:
 	struct RelJobStat* RJob[JOBSMAX];
-	std::vector<std::thread> Jobthread;
+	std::vector<MRJobGroupMdata::JobThreadId> JobsThread;
 	pthread_t driverJob;
 	pthread_cond_t AddJobCond;
 	MRJobGroup *parent;
@@ -526,7 +730,17 @@ int MRJobGroup::MRelWaitJob(int rd, struct MRelStatSt* jobstat)
 		}
 	}
 	struct RelJobStat *job 	= this->d->RJob[rd];
+	for(auto& x : this->d->JobsThread)
+	{
+		if(x.rd == rd)
+		{
 	
+			pthread_cancel(x.thrd.native_handle());
+			x.thrd.join();
+			break;
+		}
+	}
+
 	fcntl(job->fd1, F_SETFL, job->oldfd1);
 	fcntl(job->fd2, F_SETFL, job->oldfd2);
 
