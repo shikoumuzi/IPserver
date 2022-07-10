@@ -35,7 +35,7 @@ $(rece).i1:
 #$(fmsg): $(fmsg).o
 #	g++ $(Link) $^ -o $@
 #	ctage -R
-#	rm -rf $^
+#	
 
 $(fmsg).o: $(fmsg).s
 	g++ -c $^ -o $@

@@ -5,6 +5,7 @@
 #include<sys/types.h>
 #include<sys/ipc.h>
 #include<sys/msg.h>
+#include<sys/mman.h>
 #include<errno.h>
 #include<pthread.h>
 #include"ftb_msg.h"
@@ -49,6 +50,17 @@ struct MMsgJob
 MDATA(MMsg)
 {
 public:
+	void operator=(MDATA(MMsg)&& otherdata)
+	{
+		memcpy(this->mJob, otherdata.mJob, MMSGMAX);
+		this->parent = otherdata.parent;
+		otherdata.parent = nullptr;
+		for(auto&x : otherdata.mJob)
+		{
+			x = nullptr;
+		}
+	}
+public:
 	MMsgMdata(MMsg* parent)
 	{
 		this->parent = parent;
@@ -63,8 +75,8 @@ public:
 		{
 			if( x != nullptr)
 			{
-				msgctl(x->md, IPC_RMID, NULL);
-				delete x;
+				msgctl(x->msgid, IPC_RMID, NULL);
+				munmap(x, sizeof(struct MMsgJob));
 				x  = nullptr;
 			}
 		}
@@ -73,19 +85,19 @@ public:
 	int driverFsm(int md, void *data_address, bool kpstat, long datasize, long mtype )
 	{
 		struct MMsgJob *job = this->mJob[md];
-		int err = 0;
+		int rebytes = 0;
 		if(job == nullptr)
 		{
 			errno = EINVAL;
 			perror("driver fsm failed: ");
 			throw std::string("job error");
 		}
-		mcout("fsm drivering now");
+		////mcout("fsm drivering now");
 		switch(job->fsm.state)
 		{
 		case MSTATE_RCV:
 			{
-				mcout("MSTATE_RCV go in ");
+				////mcout("MSTATE_RCV go in ");
 				if(data_address == nullptr)
 				{
 					errno 			= EINVAL;
@@ -98,10 +110,10 @@ public:
 					perror("MSTATE_RCV");
 					return -1;
 				}
-				if(msgrcv(job->msgid, data_address, 
-						datasize , mtype, 0 ) < 0)
+				if(rebytes = (msgrcv(job->msgid, data_address, 
+						datasize , 0, 0 )) < 0)
 				{
-					mcout("MSTATE_RCV doing");
+					////mcout("MSTATE_RCV doing");
 					if(errno == EAGAIN || errno == EINTR || errno == 0)
 					{
 						job->fsm.state	= MSTATE_RCV;
@@ -109,7 +121,7 @@ public:
 					}
 					else
 					{
-						perror("driver faild: ");
+						perror("MSTATE_RCV ");
 					}
 					
 					job->fsm.errstr		= strerror(errno);		
@@ -119,11 +131,13 @@ public:
 					throw job->fsm.errstr;
 					return -1;
 				}
-				mcout("message get");
-
-				mcout(*((int*)(data_address)));	
-				mcout(*((int*)(data_address) + sizeof(int)));
-
+				////mcout("message get");
+				
+//				////mcout(rebytes);
+//				////mcout(*((int*)(data_address)));	
+//				////mcout(*((int*)(data_address) + sizeof(long)));
+//				////mcout(*((int*)(data_address) +2 * sizeof(long)));
+				
 				job->fsm.state = (!kpstat)? MSTATE_SND: MSTATE_RCV;
 				return 0;
 				break;
@@ -148,6 +162,13 @@ public:
 					{
 						job->fsm.state 	= MSTATE_SND;
 						return 0;
+					}
+					perror("MSTATE_SND");
+					if(errno == EINVAL)
+					{
+						//mcout(job->msgid);
+						//mcout(data_address);
+						//mcout(datasize);
 					}
 					job->fsm.errstr		= strerror(errno);		
 					job->fsm.errstate 	= MSTATE_SND;
@@ -186,47 +207,81 @@ public:
        	MMsg* parent;
 };
 
-MMsg::MMsg():d(new MDATA(MMsg)(this)){}
+
+void MMsg::operator=(MMsg&& othermsg)
+{
+	this->d = othermsg.d;
+	othermsg.d = nullptr;	
+}
+
+MMsg::MMsg()
+{
+	MDATA(MMsg) *tmpmsg 	= new MDATA(MMsg)(this);
+	this->d 		= (MDATA(MMsg)*)
+					   mmap(NULL,
+					   sizeof(MDATA(MMsg)),
+					   PROT_READ|PROT_WRITE,
+					   MAP_SHARED| MAP_ANONYMOUS,
+					  -1,0);
+	*this->d		= std::move(*tmpmsg);
+	delete tmpmsg;
+}
 MMsg::~MMsg()
 {
-	delete this->d;
+	if(this->d != nullptr)
+	{	
+		this->d->~MMsgMdata();
+		munmap(this->d, sizeof(MDATA(MMsg)));
+		this->d = nullptr;
+	}
 }
 
 int MMsg:: MMsgRegister(u_int64_t mod, const char* pathname)
 {
-	if(!((mod & MSTATE_RCV) || (mod & MSTATE_SND)))
+	if(!((mod & MMSG_RCV) || (mod & MMSG_SEND)))
 	{
 		errno = EINVAL;
+		perror("MMsgRegister():mod error(): ");
 		throw std::string("EINVAL");
 		return -EINVAL;
 	}
 	int md = 0;
-
+	//mcout("MMsgRegister work");
+	//mcout(&MsgPosLock);
+	//mcout(this->d);
 	pthread_mutex_lock(&MsgPosLock);
 	for(; md < MMSGMAX; ++md)
 	{
+		//mcout("range_for");
 		if(this->d->mJob[md] == nullptr)
-			break;		
+		{
+			//mcout("md:  ====");	
+			//mcout(md);
+			break;
+		}		
 	}
 	pthread_mutex_unlock(&MsgPosLock);
-	
+	//mcout("pthread unlock");	
 	if(md == MMSGMAX)
 	{
 		errno = ENOMEM;
+		perror("MMsgReigster():");
 		throw std::string("ENOMEM");
 		return -ENOMEM;
 	}
 	key_t key;
 	int msgid = 0;	
-	
+	//mcout("ftbk ready");
+	//这里一定要记得获取权限，不然无法读写	
 	if(mod & MMSG_PUBLIC)
 	{
 		key 	= ftok(pathname, MPROJ);
-		msgid 	= msgget(key, IPC_CREAT);
+		msgid 	= msgget(key, 0666| IPC_CREAT);
 	}
 	if(mod & MMSG_PRIVATE)
-		msgid = msgget(IPC_PRIVATE, IPC_CREAT);	
-	
+		msgid = msgget(IPC_PRIVATE, 0666 | IPC_CREAT);	
+	//mcout("msgid:               ========");
+	//mcout(msgid);	
 	if(msgid < 0)
 	{
 		if(errno == EEXIST)
@@ -235,19 +290,30 @@ int MMsg:: MMsgRegister(u_int64_t mod, const char* pathname)
 			{
 				if(x->key == key)
 				{
+					//perror("msgget():");
+					//保证获取的是同一个消息队列
 					return x->md;
 				}
 			}
 		}
 		else
 		{
+			perror("MMsgReigster():");
 			throw std::string(strerror(errno));
+		
 			return -errno;
 		}
 	}
 	else
 	{
-		this->d->mJob[md] 		= new struct MMsgJob;
+		//mcout("init now");
+		this->d->mJob[md] 		= (struct MMsgJob*)
+						   mmap(NULL,
+						   sizeof(struct MMsgJob),
+						   PROT_READ|PROT_WRITE,
+						   MAP_SHARED| MAP_ANONYMOUS,
+						  -1,0);
+		//mcout("mmap finish");
 		struct MMsgJob *job	 	= this->d->mJob[md];
 		job->state 			= MSTATE_RUNNING;
 		job->key 			= key;
@@ -257,8 +323,9 @@ int MMsg:: MMsgRegister(u_int64_t mod, const char* pathname)
 		job->fsm.err			= 0;
 		job->parent			= this->d;
 		job->md				= md;
+		//mcout("init finish");
 	}
-	mcout("Register success\n");
+	////mcout("Register success\n");
 	return md;
 }
 
@@ -272,7 +339,7 @@ int MMsg::MMsgCtl(int md, u_int64_t mod, void* data, void*retdata, long size, lo
 		|| mtype < 0
 		|| mod & 0xFFFFFF00UL)
 	{
-		mcout(mod);
+		////mcout(mod);
 		fprintf(stderr, "\
 				!((mod & MMSG_KPSTAT) || (mod & MMSG_CHSTAT)): %d\n \
 				data == nullptr: %d\n \
@@ -288,54 +355,56 @@ int MMsg::MMsgCtl(int md, u_int64_t mod, void* data, void*retdata, long size, lo
 				 mod & 0xFFFFFF00UL); 
 		perror("ftb_msg: MMsgCtl() ");
 		errno = EINVAL;
+		perror("MMsgCtl():");
 		throw std::string("EINVAL");
 		return -EINVAL;
 	}	
 	int err = 0;
 
-	void *datapack = malloc(sizeof(long) + size);
-	memcpy(datapack, &mtype, sizeof(long));
+//	void *datapack = malloc(sizeof(long) + size);
+//	memcpy(datapack, &mtype, sizeof(long));
 	
-	mcout("datapack create successly");
+	////mcout("datapack create successly");
 	
-	switch(mtype)
-	{
-	case MMSGPATH:
-		memcpy(datapack + sizeof(long), data, size);	
-		break;
-	case MMSGDATA:
-		memcpy(datapack + sizeof(long), data, size);
-		break;
-	case MMSGEND:
-		memcpy(datapack + sizeof(long), data, size);
-		break;
-	default:
-		errno = EINVAL;
-		throw std::string("EIVAL");
-		return EINVAL;
-		break;
-	}
+//	switch(mtype)
+//	{
+//	case MMSGPATH:
+//		memcpy(datapack + sizeof(long), data, size);	
+//		break;
+//	case MMSGDATA:
+//		memcpy(datapack + sizeof(long), data, size);
+//		break;
+//	case MMSGEND:
+//		memcpy(datapack + sizeof(long), data, size);
+//		break;
+//	default:
+//		errno = EINVAL;
+//		throw std::string("EIVAL");
+//		return EINVAL;
+//		break;
+//	}
 	
-	mcout("ftb_msg: datapack set already");
+	////mcout("ftb_msg: datapack set already");
 	if( mod & MMSG_RCV)
 	{
-		mcout("MSTATE_RCV");
+		////mcout("MSTATE_RCV");
 		this->d->mJob[md]->fsm.state = MSTATE_RCV;	
-		err = this->d->driverFsm(md, datapack, (mod & MMSG_KPSTAT)? true: false, size, mtype);
+		err = this->d->driverFsm(md, retdata, (mod & MMSG_KPSTAT)? true: false, size, mtype);
 	}
 	else if( mod & MMSG_SEND)
 	{
 		this->d->mJob[md]->fsm.state = MSTATE_SND;
-		err = this->d->driverFsm(md, datapack, (mod & MMSG_KPSTAT)? true: false, size, mtype);
+		err = this->d->driverFsm(md, data, (mod & MMSG_KPSTAT)? true: false, size, mtype);
 	}
 	else if( mod & MMSG_AUTO)
 	{
 			
-		err = this->d->driverFsm(md, datapack, (mod & MMSG_KPSTAT)? true: false, size, mtype);
+		err = this->d->driverFsm(md, data, (mod & MMSG_KPSTAT)? true: false, size, mtype);
 	}
 	else
 	{
 		errno = EINVAL;
+		perror("mod err:");
 		throw std::string("EINVAL");
 		return -EINVAL;
 	}
@@ -372,42 +441,43 @@ int MMsg::MMsgCtl(int md, u_int64_t mod, void* data, void*retdata, long size, lo
 		}
 		return -1;
 	}
-	if(retdata != nullptr)
-	{
-		long smtype = (long)datapack;
-		switch(smtype)
-		{
-		case MMSGPATH:
-			{
-				std::cout<< (char*)(datapack + sizeof(long)) << std::endl;
-				break;
-			}
-		case MMSGDATA:
-			{
-				memcpy(retdata, datapack + sizeof(long), size);
-				break;
-			}
-		case MMSGEND:
-			{
-				std::cout<< (char*)(datapack + sizeof(long)) << std::endl;
-				break;
-			}
-		default:
-			
-			break;
-		}
-	}
-	free(datapack);
+//	if(retdata != nullptr && (mod & MMSG_RCV))
+//	{
+//		long smtype = (long)datapack;
+//		switch(smtype)
+//		{
+//		case MMSGPATH:
+//			{
+//				std::cout<< (char*)(datapack + sizeof(long)) << std::endl;
+//				break;
+//			}
+//		case MMSGDATA:
+//			{
+//				memcpy(retdata, data, size);
+//				break;
+//			}
+//		case MMSGEND:
+//			{
+//				std::cout<< (char*)(datapack + sizeof(long)) << std::endl;
+//				break;
+//			}
+//		default:
+//			
+//			break;
+//		}
+//	}
+//	free(datapack);
 	return 0;
 
 }
 
 int MMsg::MMsgDestroy(int md)
 {
-	const struct MMsgJob * job = this->d->mJob[md];
+	struct MMsgJob * job = this->d->mJob[md];
 	if(job == nullptr)
 	{
 		errno = EINVAL;
+		perror("MMsgDestory()");
 		throw std::string("EINVAL");
 		return -EINVAL;
 	}
@@ -417,7 +487,7 @@ int MMsg::MMsgDestroy(int md)
 		return errno;
 	}
 	
-	delete job;
+	munmap(job, sizeof(struct MMsgJob));
 	job = nullptr;
 	this->d->mJob[md] = nullptr;
 

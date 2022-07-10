@@ -13,6 +13,9 @@
 #define MMSG_RCV	0x00000008UL
 #define MMSG_KPSTAT	0x00000010UL
 #define MMSG_CHSTAT	0X00000020UL
+
+#define MMSGDATA	0x00000001UL
+
 MDATA(MMsg);
 
 template<typename T>
@@ -26,6 +29,8 @@ class MMsg
 public:
 	MMsg();
 	~MMsg();
+public:
+	void operator=(MMsg&& othermsg);
 public:
 	int MMsgRegister(u_int64_t mod, const char* pathname);
 	

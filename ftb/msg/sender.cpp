@@ -9,29 +9,32 @@ using namespace std;
 
 struct rdata
 {
+	char name[100];
 	int math;
 	int chinese;
 };
 
 
-int main()
+int main(int arg, char*argv[])
 {
 	MMsg fmsg;
 	int md = fmsg.MMsgRegister(MMSG_PUBLIC | MMSG_SEND, MPATHNAME);
-	
+	mcout("register");
+
 	msg_data_t<rdata> pack, retpack;
 	pack.mtype 		= MMSGDATA;
-	//memcpy(pack.data.name , "shikoumuzi",strlen("shikoumuzi"));
+	memcpy(pack.data.name , argv[1],strlen(argv[1]));
 	pack.data.math 		= 100;
 	pack.data.chinese 	= 20;	
 	
-	fmsg.MMsgCtl(md, MMSG_SEND | MMSG_KPSTAT, &pack.data, &retpack.data, sizeof(pack.data), MMSGDATA);
+	mcout("ctl");
+	fmsg.MMsgCtl(md, MMSG_SEND | MMSG_KPSTAT, &pack, &retpack, sizeof(pack) - sizeof(long), MMSGDATA);
 /*	
 	cout<<	"pack.mtype: " <<pack.mtype 
 		<< "\npack.data.math: " << pack.data.math
 	       	<< "\npack.data.chinese: " << pack.data.chinese <<endl;
-	
-*/
+
+*/	
 	cout<< "OK!" <<endl;	
 	return 0;
 }

@@ -8,6 +8,7 @@ DataPackage	protocol.h	/^union DataPackage$/;"	u
 Link	makefile	/^Link = -std=c++20 -pthread -lpthread$/;"	m
 MDATA	ftb_msg.cpp	/^MDATA(MMsg)$/;"	f
 MDATA	ftb_msg.h	5;"	d
+MMSGDATA	ftb_msg.h	17;"	d
 MMSGDATA	protocol.h	/^	MMSGDATA,$/;"	e	enum:__anon1
 MMSGEND	protocol.h	/^	MMSGEND$/;"	e	enum:__anon1
 MMSGMAX	ftb_msg.h	6;"	d
@@ -19,7 +20,7 @@ MMSG_PRIVATE	ftb_msg.h	9;"	d
 MMSG_PUBLIC	ftb_msg.h	10;"	d
 MMSG_RCV	ftb_msg.h	13;"	d
 MMSG_SEND	ftb_msg.h	12;"	d
-MMsg	ftb_msg.cpp	/^MMsg::MMsg():d(new MDATA(MMsg)(this)){}$/;"	f	class:MMsg
+MMsg	ftb_msg.cpp	/^MMsg::MMsg()$/;"	f	class:MMsg
 MMsg	ftb_msg.h	/^MDATA(MMsg);$/;"	v
 MMsg	ftb_msg.h	/^class MMsg$/;"	c
 MMsgCtl	ftb_msg.cpp	/^int MMsg::MMsgCtl(int md, u_int64_t mod, void* data, void*retdata, long size, long mtype)$/;"	f	class:MMsg
@@ -43,38 +44,6 @@ MsgEnd	protocol.h	/^typedef struct MsgEnd$/;"	s
 MsgPath	protocol.h	/^typedef struct MsgPath$/;"	s
 MsgPosLock	ftb_msg.cpp	/^static pthread_mutex_t MsgPosLock = PTHREAD_MUTEX_INITIALIZER;$/;"	v	file:
 PATHSIZE	protocol.h	5;"	d
-_GLOBAL__sub_I__ZN4MMsgC2Ev	ftb_msg.s	/^_GLOBAL__sub_I__ZN4MMsgC2Ev:$/;"	l
-_GLOBAL__sub_I_main	receiver.s	/^_GLOBAL__sub_I_main:$/;"	l
-_Z41__static_initialization_and_destruction_0ii	ftb_msg.s	/^_Z41__static_initialization_and_destruction_0ii:$/;"	l
-_Z41__static_initialization_and_destruction_0ii	receiver.s	/^_Z41__static_initialization_and_destruction_0ii:$/;"	l
-_Z5mcoutIPKcEvT_	ftb_msg.s	/^_Z5mcoutIPKcEvT_:$/;"	l
-_Z5mcoutIPKcEvT_	receiver.s	/^_Z5mcoutIPKcEvT_:$/;"	l
-_Z5mcoutIiEvT_	ftb_msg.s	/^_Z5mcoutIiEvT_:$/;"	l
-_Z5mcoutImEvT_	ftb_msg.s	/^_Z5mcoutImEvT_:$/;"	l
-_ZN4MMsg11MMsgDestroyEi	ftb_msg.s	/^_ZN4MMsg11MMsgDestroyEi:$/;"	l
-_ZN4MMsg12MMsgRegisterEmPKc	ftb_msg.s	/^_ZN4MMsg12MMsgRegisterEmPKc:$/;"	l
-_ZN4MMsg7MMsgCtlEimPvS0_ll	ftb_msg.s	/^_ZN4MMsg7MMsgCtlEimPvS0_ll:$/;"	l
-_ZN4MMsgC2Ev	ftb_msg.s	/^_ZN4MMsgC2Ev:$/;"	l
-_ZN4MMsgD2Ev	ftb_msg.s	/^_ZN4MMsgD2Ev:$/;"	l
-_ZN7MMsgFsmC2Ev	ftb_msg.s	/^_ZN7MMsgFsmC2Ev:$/;"	l
-_ZN7MMsgFsmD2Ev	ftb_msg.s	/^_ZN7MMsgFsmD2Ev:$/;"	l
-_ZN7MMsgJobC2Ev	ftb_msg.s	/^_ZN7MMsgJobC2Ev:$/;"	l
-_ZN7MMsgJobD2Ev	ftb_msg.s	/^_ZN7MMsgJobD2Ev:$/;"	l
-_ZN9MMsgMdata9driverFsmEiPvbll	ftb_msg.s	/^_ZN9MMsgMdata9driverFsmEiPvbll:$/;"	l
-_ZN9MMsgMdataC2EP4MMsg	ftb_msg.s	/^_ZN9MMsgMdataC2EP4MMsg:$/;"	l
-_ZN9MMsgMdataD2Ev	ftb_msg.s	/^_ZN9MMsgMdataD2Ev:$/;"	l
-_ZN9__gnu_cxx11char_traitsIcE2eqERKcS3_	ftb_msg.s	/^_ZN9__gnu_cxx11char_traitsIcE2eqERKcS3_:$/;"	l
-_ZN9__gnu_cxx11char_traitsIcE6lengthEPKc	ftb_msg.s	/^_ZN9__gnu_cxx11char_traitsIcE6lengthEPKc:$/;"	l
-_ZN9__gnu_cxx17__is_null_pointerIKcEEbPT_	ftb_msg.s	/^_ZN9__gnu_cxx17__is_null_pointerIKcEEbPT_:$/;"	l
-_ZNSt11char_traitsIcE6lengthEPKc	ftb_msg.s	/^_ZNSt11char_traitsIcE6lengthEPKc:$/;"	l
-_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE12_Alloc_hiderD2Ev	ftb_msg.s	/^_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE12_Alloc_hiderD2Ev:$/;"	l
-_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE12_M_constructIPKcEEvT_S8_St20forward_iterator_tag	ftb_msg.s	/^_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE12_M_constructIPKcEEvT_S8_St20forward_iterator_tag:$/;"	l
-_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC2IS3_EEPKcRKS3_	ftb_msg.s	/^_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC2IS3_EEPKcRKS3_:$/;"	l
-_ZSt10__distanceIPKcENSt15iterator_traitsIT_E15difference_typeES3_S3_St26random_access_iterator_tag	ftb_msg.s	/^_ZSt10__distanceIPKcENSt15iterator_traitsIT_E15difference_typeES3_S3_St26random_access_iterator_tag:$/;"	l
-_ZSt19__iterator_categoryIPKcENSt15iterator_traitsIT_E17iterator_categoryERKS3_	ftb_msg.s	/^_ZSt19__iterator_categoryIPKcENSt15iterator_traitsIT_E17iterator_categoryERKS3_:$/;"	l
-_ZSt8distanceIPKcENSt15iterator_traitsIT_E15difference_typeES3_S3_	ftb_msg.s	/^_ZSt8distanceIPKcENSt15iterator_traitsIT_E15difference_typeES3_S3_:$/;"	l
-_ZTINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE	ftb_msg.s	/^_ZTINSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE:$/;"	l
-_ZTSNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE	ftb_msg.s	/^_ZTSNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE:$/;"	l
 __data_type	protocol.h	/^concept __data_type = requires(T x)$/;"	v
 chinese	receiver.cpp	/^	int chinese;$/;"	m	struct:rdata	file:
 chinese	sender.cpp	/^	int chinese;$/;"	m	struct:rdata	file:
@@ -88,8 +57,7 @@ fmsg	makefile	/^fmsg = ftb_msg$/;"	m
 fsm	ftb_msg.cpp	/^	struct MMsgFsm fsm;$/;"	m	struct:MMsgJob	typeref:struct:MMsgJob::MMsgFsm	file:
 key	ftb_msg.cpp	/^	key_t key;$/;"	m	struct:MMsgJob	file:
 main	receiver.cpp	/^int main()$/;"	f
-main	receiver.s	/^main:$/;"	l
-main	sender.cpp	/^int main()$/;"	f
+main	sender.cpp	/^int main(int arg, char*argv[])$/;"	f
 math	receiver.cpp	/^	int math;$/;"	m	struct:rdata	file:
 math	sender.cpp	/^	int math;$/;"	m	struct:rdata	file:
 mcout	ftb_msg.h	/^void mcout(T data)$/;"	f
@@ -104,6 +72,9 @@ mtype	protocol.h	/^	long mtype; $/;"	m	struct:MsgData
 mtype	protocol.h	/^	long mtype;$/;"	m	struct:MsgEnd
 mtype	protocol.h	/^	long mtype;$/;"	m	struct:MsgPath
 mtype	protocol.h	/^	long mtype;$/;"	m	union:DataPackage
+name	receiver.cpp	/^	char name[100];$/;"	m	struct:rdata	file:
+name	sender.cpp	/^	char name[100];$/;"	m	struct:rdata	file:
+operator =	ftb_msg.cpp	/^void MMsg::operator=(MMsg&& othermsg)$/;"	f	class:MMsg
 parent	ftb_msg.cpp	/^	MDATA(MMsg) *parent;$/;"	m	struct:MMsgJob	file:
 pathname	protocol.h	/^	char pathname[PATHSIZE];$/;"	m	struct:MsgPath
 rdata	receiver.cpp	/^struct rdata$/;"	s	file:
