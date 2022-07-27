@@ -26,5 +26,7 @@ typedef struct ServerConf
 
 
 extern server_conf_t serverconf;
+extern int serversd;
+extern struct sockaddr_in sndaddr;
 
 #endif

@@ -1,6 +1,6 @@
 #ifndef __MUMEDIALIB_H__
 #define __MUMEDIALIB_H__
-#include<ipv4serverprot.h>
+#include<ipv4serverproto.h>
 
 
 typedef struct MlibListEntry
@@ -11,7 +11,7 @@ typedef struct MlibListEntry
 }mlib_listentry_t;
 
 int mlib_getchnlist(mlib_listentry_t **result, int *resnum);
-int mlib_freechnlist(mlib_listentrt_t* mliblistentry);
+int mlib_freechnlist(mlib_listentry_t* mliblistentry);
 
-int mlib_readchnl(chnid_t , void *, size_t )
+ssize_t mlib_readchnl(chnid_t , void *, size_t );
 #endif

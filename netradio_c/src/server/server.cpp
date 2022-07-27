@@ -12,6 +12,8 @@
 #include<net/if.h>
 
 #include<medialib.h>
+
+#include"server_conf.h"
 static void ServerHelpPrintf()
 {
  	std::cout
@@ -70,9 +72,8 @@ static int deamonize()
 }
 
 int serversd = 0;
-static void socket_init()
+static int socket_init()
 {
-	int serversd = 0;
 	if((serversd = socket(AF_INET, SOCK_DGRAM, 0)) < 0);
 	{
 		syslog(LOG_ERR, "socket(): %s" ,strerror(errno));
@@ -89,6 +90,11 @@ static void socket_init()
 	{
 		syslog(LOG_ERR, "setsockopt(): IPPROTO_IP %s", strerror(errno));
 	}
+
+	sndaddr.sin_family 	= AF_INET;
+	sndaddr.sin_port	= htons(atoi(server_conf.rcvport));
+	inet_pton(AF_INET, server_conf.mgroup, &sndaddr.sin_addr);
+	return 0;
 }
 
 static void deamon_exit(int s)
@@ -201,11 +207,20 @@ int main(int argc, char* argv[])
 	/*获取频道信息*/
 	mlib_listentry_t *chnlist;
 	int list_size = 0, listerr = 0;
-	
 
-	getchnlist(&chnlist, &list_size);
+	int err = 0;	
+
+	if((err = getchnlist(&chnlist, &list_size)) > 0)
+	{
+		syslog(LOG_ERR, "mlib_getchnlist():%s", strerrno(err));
+		exit(1);
+	}
 	/*创建节目单线程*/
-	thr_list_create(chnlist, int list_size);
+	if((err = thr_list_create(chnlist, int list_size)))
+	{
+		exit(1);
+	}
+
 	/*延迟抖动： 延迟的时间有长有短，造成收包混乱*/
 
 
@@ -213,8 +228,14 @@ int main(int argc, char* argv[])
 	int i = 0;
 	for(; i < list_size; ++i)
 	{
-		thr_channel_create(chnlist + i);
+		err = thr_channel_create(chnlist + i);
+		if(err)
+		{
+			fprintf(stderr,"thr_channel_create(): %s",strerror(err));
+		}
 	}	
+
+	
 	syslog(LOG_DEBUG, "%d channel thread created", i);
 
 
