@@ -6,6 +6,7 @@
 typedef struct MlibListEntry
 {
 	chnid_t chnid;
+
 	char *desc;
 
 }mlib_listentry_t;

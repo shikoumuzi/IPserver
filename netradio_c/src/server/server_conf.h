@@ -19,7 +19,7 @@ typedef struct ServerConf
 	char *mgroup;
 	char *media_dir;
 	char *ifname;
-	char rumdoe;
+	char runmod;
 
 
 }server_conf_t;

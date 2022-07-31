@@ -5,7 +5,7 @@
 
 int thr_channel_create(mlib_listentry_t * );
 
-int thr_channel_destory(mlib_listentry_t * );
+int thr_channel_destroy(mlib_listentry_t * );
 
-int thr_channel_destory_all();
+int thr_channel_destroy_all();
 #endif

@@ -4,7 +4,7 @@
 #include<iostream>
 #include<stdio.h>
 #include<ipv4serverproto.h>
-#define __MUDEFAULT_PLAYERCMD__ "mpg123 -  > /dev/null"
+#define __MUDEFAULT_PLAYERCMD__ "mplayer -  > /dev/null"
 //将mpg123的文字输出到空设备上
 
 typedef struct ClientConfST

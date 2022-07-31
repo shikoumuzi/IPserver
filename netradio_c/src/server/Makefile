@@ -1,14 +1,19 @@
 
-CFLAGS = -std=c++20 -I../include/ -I../include/tbf/threadtbf/ -pthread -lpthread
-
+DIRLINKS = -I../include/ -I../include/tbf/threadtbf/  
+LIBLINKS = -std=c++20 -pthread -lpthread
+CFLAGS = $(DIRLINKS) $(LIBLINKS)
 CC = g++
 
+DEFAULT_OPERATOR =  $(CC) $(CFLAGS) $^ -c -o $@
 
-all:server
 
-server:medialib.o thr_list.o thr_channel.o server.o
-	v$(CC) $^ -o $@
+all:Mserver
 
+Mserver: Mtbf.o medialib.o thr_list.o thr_channel.o server.o
+	$(CC) $(CFLAGS) $^ -o $@
+
+Mtbf.o:../include/tbf/threadtbf/Mtbf.cpp
+	$(CC) $(LIBLINKS)  $^ -c -o $@ 
 
 medialib.o:medialib.cpp
 	$(CC) $(CFLAGS) $^ -c -o $@
@@ -24,4 +29,4 @@ server.o:server.cpp
 	$(CC) $(CFLAGS) $^ -c -o $@ 
 
 clean:
-	rm -rf *.o
+	rm -rf *.o Mserver

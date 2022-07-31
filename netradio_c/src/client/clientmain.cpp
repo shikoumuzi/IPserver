@@ -183,6 +183,7 @@ int main(int argc, char* argv[])
 			fprintf(stderr, "message is too small.\n");
 			continue;
 		}
+		printf("packlen = %d\n", packlen);
 		if(msg_list->chnid != LISTCHNID )
 		{
 			fprintf(stderr, "chnid is no match.\n");
@@ -193,7 +194,7 @@ int main(int argc, char* argv[])
 
 	//打印节目单
 	msg_listentry_t *pos = msg_list->entry;
-	for(; (char*)pos < ((char*)msg_list + ntohs(pos->len)) ; 
+	for(; (char*)pos < ((char*)msg_list + packlen) ; 
 			pos = (msg_listentry_t*)(((char*)pos) + ntohs(pos->len)))
 	//通过强转char*保证指针运算一个字节一个字节相加
 	//由于这里是变长结构体套变长结构体，所以需要其中一个len数据长度来确定偏移量
@@ -203,16 +204,20 @@ int main(int argc, char* argv[])
 
 	//选择频道
 	int chosenid = 0;
-	while(1)
-	{
-		int ret = scanf("%d", &chosenid);
-		if(ret != 1)
-		{
-			perror("input can not scanf");
-			exit(1);
-		}
-	}
-
+//	while(1)
+//	{
+		printf("选择频道: ");
+//		int ret = scanf("%d", &chosenid);
+		std::cin >> chosenid;
+//		if(ret != 1)
+//		{
+//			perror("input can not scanf");
+//			exit(1);
+//		}
+		printf("你已经选择了第 %d 频道", chosenid);
+//		break;
+//	}
+	
 	//收频道包发给子进程
 	msg_channel_t* msg_channel = (msg_channel_t*)malloc(MSG_CHANNEL_MAX);
 	if(msg_channel == NULL)
@@ -222,6 +227,7 @@ int main(int argc, char* argv[])
 	}
 
 	packlen = 0;	
+	printf("revfrom(): ready");
 	while(1)
 	{
 		if((packlen = recvfrom(sockfd, msg_channel, MSG_CHANNEL_MAX, 0,

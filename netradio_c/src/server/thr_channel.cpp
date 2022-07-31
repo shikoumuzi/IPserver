@@ -30,18 +30,21 @@ static void* thr_channel_snder(void *ptr)
 		syslog(LOG_ERR,"malloc():%s\n", strerror(errno));
 		exit(1);
 	}
-	
 	sbufp->chnid = ((msg_channel_t*)ptr)->chnid;
-
+	
+	int ret = 0;
 	while(1)
 	{
 		len = mlib_readchnl(((msg_channel_t*)ptr)->chnid, sbufp->data, MSG_DATA_MAX);
-		
 
-		if(sendto(serversd,sbufp, len + sizeof(chnid_t), 0, (struct sockaddr*)&sndaddr,
-				sizeof(sndaddr)) < 0 )
+		if((ret = sendto(serversd,sbufp, len + sizeof(chnid_t), 0, (struct sockaddr*)&sndaddr,
+				sizeof(sndaddr))) < 0 )
 		{
-			syslog(LOG_ERR, "thr_channel(%d):sendto():%s", ((msg_channel_t*)ptr)->chnid, strerror(errno));
+			syslog(LOG_ERR, "thr_channel(%d):sendto():%s\n", ((msg_channel_t*)ptr)->chnid, strerror(errno));
+		}
+		else
+		{
+			syslog(LOG_DEBUG, "thread id %d, thr_channel(%d):sendto():ret:%d\n",pthread_self(), ((msg_channel_t*)ptr)->chnid,ret);
 		}
 		sched_yield();
 		//主动出让调度期
@@ -57,7 +60,7 @@ static void* thr_channel_snder(void *ptr)
 int thr_channel_create(mlib_listentry_t *ptr )
 {
 	int err = 0;
-	if((err = pthread_create(&thr_channel[tid_nextpos].tid, NULL, thr_channel_snder, NULL)))
+	if((err = pthread_create(&thr_channel[tid_nextpos].tid, NULL, thr_channel_snder, ptr)))
 	{
 		syslog(LOG_WARNING,"pthread_create():%s", strerror(err));
 		return -err;
@@ -67,7 +70,7 @@ int thr_channel_create(mlib_listentry_t *ptr )
 	return 0;
 }
 
-int thr_channel_destory(mlib_listentry_t * ptr)
+int thr_channel_destroy(mlib_listentry_t * ptr)
 {
 	
 	for(int i = 0; i < CHNNR; ++i)
@@ -87,7 +90,7 @@ int thr_channel_destory(mlib_listentry_t * ptr)
 	return -1;
 }
 
-int thr_channel_destory_all()
+int thr_channel_destroy_all()
 {
 	for(int i = 0; i < CHNNR; ++i)
 	{

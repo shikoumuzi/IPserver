@@ -7,6 +7,7 @@
 #include<sys/types.h>
 #include"Mtbf.h"
 #include<string.h>
+#include<thread>
 using namespace std;
 
 #define FILENAME "./Mtbf.cpp"
@@ -19,6 +20,7 @@ int main()
 	int len = 0;
 	int toks = 0;
 
+	
 	Mtbf tbf(1, nullptr);
 	tbf.TbfStart();
 	while(toks = tbf.getVaildTokens(10))

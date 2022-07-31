@@ -14,6 +14,7 @@
 #include<time.h>
 #include<errno.h>
 #include<string>
+#include<syslog.h>
 #include"Mtbf.h"
 
 #define MMAXGROUP 128
@@ -103,18 +104,18 @@ public:
 	struct timespec* setWaitClock(int ms)
 	{
 	//	设置条件变量的延时
-		static struct timespec abstime;
-		clock_gettime(CLOCK_MONOTONIC, &(abstime));
+		struct timespec* abstime = new struct timespec;
+		clock_gettime(CLOCK_MONOTONIC, (abstime));
 	//	CLOCK_MONOTONIC代表着从系统开机时开始计算的时间，不受用户改变的影响
-		abstime.tv_sec += ms/1000;	
+		abstime->tv_sec += ms/1000;	
 		
 	//	因为有可能加上秒数后超时，需要对nsec特殊处理
-		long us = abstime.tv_nsec/1000 + (ms % 1000) * 1000;//先统一转成微妙
-		abstime.tv_sec += us / 1000000;
+		long us = abstime->tv_nsec/1000 + (ms % 1000) * 1000;//先统一转成微妙
+		abstime->tv_sec += us / 1000000;
 		
 		us %= 1000000;
-		abstime.tv_nsec += 0;//us * 1000;
-		return &(abstime);
+		abstime->tv_nsec += 0;//us * 1000;
+		return (abstime);
 	}
 	pthread_condattr_t* getCAttr()
 	{
@@ -143,9 +144,13 @@ public:
 					((getFun(ptr->Pdata)->getCond)(ptr->d, timeout)/*ptr->getCond(timeout)*/,
 					 getPMutex(ptr->d)/*ptr->getMutex()*/);break;
 			case TIMEDWAIT:
+				{
+				struct timespec* tmptime = this->setWaitClock(1000);
 				err = pthread_cond_timedwait(
 					(getFun(ptr->Pdata)->getCond)(ptr->d, true)/*ptr->getCond(true)*/,
-					 (getFun(ptr->Pdata)->getMutex)(ptr->d)/*ptr->getMutex()*/, this->setWaitClock(1000));break;
+					 (getFun(ptr->Pdata)->getMutex)(ptr->d)/*ptr->getMutex()*/, tmptime);break;
+				delete (tmptime);
+				}
 			case DESTROY:
 				err = pthread_cond_destroy(
 					(getFun(ptr->Pdata)->getCond)(ptr->d, timeout)/*ptr->getCond(timeout)*/);break;
@@ -202,6 +207,7 @@ public:
 		{
 			return -EINVAL;
 		}
+		return -1;
 	}
 	~MGroupBase()
 	{
@@ -267,40 +273,46 @@ public:
 	//	std::cout << &Mtbfptr->Mtbflock<< std::endl;
 	
 		int err = 0;
-		pthread_mutex_lock(&Mtbfptr->Mtbflock);
 	//	Mcout("mutex work");	
 	//	设置信号以启用循环
 		while(1)
 	 	{
-		//	pthread_mutex_unlock(&(Mtbfptr->Mtbflock));
-		//	pthread_mutex_lock(&(Mtbfptr->Mtbflock));
+
+			pthread_mutex_lock(&Mtbfptr->Mtbflock);
 			
+		//	syslog(LOG_DEBUG,"thread id %d,while open once  %d, workstat:%s",pthread_self(), (Mtbfptr->workstat)?"true":"false");
 			while(!Mtbfptr->workstat)
 			{	
 				err = pthread_cond_wait(&(Mtbfptr->Mtbfcond), &(Mtbfptr->Mtbflock));
-		//		fprintf(stdout, "pthread_cond_wait failed %s", strerror(err));
-		//		sleep(1);
 			}
 		//	Mcout("thread work now");
 			
 		//	pthread_mutex_unlock(&(Mtbfptr->Mtbflock));
 		//	pthread_mutex_lock(&Mtbfptr->Mtbflock);
-		
 		//	一旦这里带入的超时时间的nsec超过1s就会返回无效参数 EINVAL
+			struct timespec* tmptime = MainMtbfGroup.setWaitClock(1000);
+			syslog(LOG_DEBUG,"thread id %d, pthread_cond_timedwait ready, timeout [%d:%d]", pthread_self(), tmptime->tv_sec, tmptime->tv_nsec);
+			
 			while(( err = pthread_cond_timedwait(&(Mtbfptr->Mtbfcond_tokenchange), 
 					&(Mtbfptr->Mtbflock),
-					MainMtbfGroup.setWaitClock(1000))) != ETIMEDOUT || err == EINTR)
+					tmptime)) != ETIMEDOUT || err == EINTR)
 			{
-				fprintf(stdout, "pthread_cond_timeout: %s\n", strerror(err));
+				syslog(LOG_DEBUG, "thread id %d, tbf_thread:pthread_cond_timeout()\n", pthread_self());
+		//		fprintf(stdout, "pthread_cond_timeout: %s\n", strerror(err));
 		//		std::cout<< err <<std::endl;
 				sleep(1);
+		
 		//		pthread_mutex_lock(&Mtbfptr->Mtbflock);
+				delete tmptime;
+				
+				tmptime = MainMtbfGroup.setWaitClock(1000);
 			}
+			delete tmptime;
 		//	Mcout("timeout");
 		//	此处的返回值为abstime的地址，这里需要在系统时间上再加上一秒以等待，
 		//	是按照超过abstime + 等待时间（设立目标时间）来确定是否结束等待的
-		//	pthread_mutex_unlock(&(Mtbfptr->Mtbflock));
-		//	pthread_mutex_lock(&(Mtbfptr->Mtbflock));	
+			pthread_mutex_unlock(&(Mtbfptr->Mtbflock));
+			//在多任务中，自行手动释放锁，来出让给其他线程调度
 			if(Mtbfptr->Maxtokens > 0)
 			{
 				Mtbfptr->Vaildtokens	+= 1;
@@ -309,9 +321,13 @@ public:
 				
 				if(Mtbfptr->currentsec > Mtbfptr->maxsec + Mtbfptr->sec)
 					Mtbfptr->currentsec -= Mtbfptr->maxsec;	
+				int tmp = Mtbfptr->Vaildtokens;
+				syslog(LOG_DEBUG,"thread id %d,vaildtoken ++, now is %d\n",pthread_self(), tmp);
 			}	
+	//		syslog(LOG_DEBUG,"thread id %d,while finish once\n",pthread_self());
+			sched_yield();
 		}
-		pthread_exit(NULL);	
+	//	pthread_exit(NULL);	
 	}
 	~MtbfMdata()
 	{
@@ -426,6 +442,7 @@ void Mtbf::pushTbf(void *p)
 int Mtbf::Tbfstop()
 {
 	this->d->workstat = false;
+	return 0;
 }
 void Mtbf::createTbf(int s, int *pos, int tokens)
 {
@@ -459,12 +476,30 @@ int  Mtbf::getVaildTokens(int s)
 		select(0, NULL, NULL, NULL, &(MainMtbfGroup.timeout));
 //	Mcout("gettoken");
 	
-	pthread_mutex_lock(&this->d->Mtbflock);
+		
+	int vadtok = 0;
 	
-	int vadtok = this->d->Vaildtokens;	
-	rt = (vadtok > s)?((this->d->Vaildtokens -= s),s):((this->d->Vaildtokens = 0), vadtok);		
+	do{
+		
+		pthread_mutex_lock(&this->d->Mtbflock);
+		//syslog(LOG_DEBUG, "thread id %d, pid: %d, getVaildTokens now", pthread_self(), this->d->pth);
+	//	if(pthread_kill(this->d->pth, 0) != 0)
+	//	{		
+	//		syslog(LOG_DEBUG, "tbf_thread is canel by unkown questioni : %s", strerror(errno));
+	//		exit(1);
+	//	}
+		
+		vadtok = this->d->Vaildtokens;	
+		rt = (vadtok > s)?((this->d->Vaildtokens -= s),s):((this->d->Vaildtokens = 0), vadtok);		
+	
+		//select(0, NULL, NULL, NULL, &(MainMtbfGroup.timeout));
+	
+	
+		pthread_mutex_unlock(&this->d->Mtbflock);
+		sched_yield();
 
-	pthread_mutex_unlock(&this->d->Mtbflock);
+	
+	}while(rt == 0);
 	return rt;
 
 }
@@ -482,6 +517,7 @@ int  Mtbf::pushTokens(int tokens)
 int  Mtbf::destoryToken()
 {
 	this->~Mtbf();
+	return 0;
 }
 
 MDATA(MtbfGroup)

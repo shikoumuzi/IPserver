@@ -49,16 +49,16 @@ static channel_context_t* path2entry(const char *path)
 	strncat(pathstr,"/desc.txt",PATHSIZE);
 	static chnid_t curr_id = MINCHNID;
 
-	FILE* fp = fopen("pathstr","r");
+	FILE* fp = fopen(pathstr,"r");
 	if(fp == NULL)
 	{
-		syslog(LOG_INFO,"%s is not a channel dir(Can't find desc.txt)",path);
+		syslog(LOG_INFO,"fopen(): %s is not a channel dir(Can't find desc.txt)",path);
 		return NULL;
 	}	
 
 	if(fgets(linebuff, PATHSIZE, fp) == NULL )
 	{
-		syslog(LOG_INFO,"%s is not a channel dir(Can't find desc.txt)",path );
+		syslog(LOG_INFO,"fgets(): %s is not a channel dir(Can't find desc.txt)",path);
 		fclose(fp);
 		return NULL;
 	}	
@@ -73,51 +73,55 @@ static channel_context_t* path2entry(const char *path)
 
 	me->desc = strdup(linebuff);
 	//字符串复制函数，在复制的同时开辟新的内存空间进行存放
-	//
+	memset(pathstr, '\0', PATHSIZE);
 	strncpy(pathstr, path, PATHSIZE);
 	strncat(pathstr,"/*.mp3", PATHSIZE);
-	if(glob(pathstr, 0, NULL, &me->mp3glob) != 0)
-	{
-		curr_id ++ ;
-		syslog(LOG_ERR,"%s is not a channel dir(Can't find mp3 files)", path);
-		free(me);
-		return NULL;
-	}
+	
+	int globres_mp3 = 0, globres_flac = 0;
+	globres_mp3 = glob(pathstr, 0, NULL, &me->mp3glob);
+	
 	memset(pathstr, '\0', PATHSIZE);
 	strncpy(pathstr,path, PATHSIZE);
 	strncat(pathstr,"/*.flac", PATHSIZE);
-	if(glob(pathstr, GLOB_APPEND, NULL,&me->mp3glob) != 0)
-	{
-		
+	
+	globres_flac = glob(pathstr, GLOB_APPEND, NULL,&me->mp3glob);
+	
+	if(globres_flac != 0 && globres_mp3 != 0)		
+	{	
 		curr_id ++ ;
 		syslog(LOG_ERR,"%s is not a channel dir(Can't find mp3 files)", path);
 		free(me);
 		return NULL;
 	}
-
+	
+	for(int i = 0; i < globres.gl_pathc && globres.gl_pathv + i != nullptr; ++i)
+	{
+		syslog(LOG_DEBUG, "%s\n", globres.gl_pathv[i]);
+	}
 
 	me->pos = 0;
 	me->offset = 0;
 	me->fd = open(me->mp3glob.gl_pathv[me->pos], O_RDONLY);
 	if(me->fd < 0)
 	{
-		syslog(LOG_WARNING, "%s open failed", me->mp3glob.gl_pathv[me->pos]);
+		syslog(LOG_WARNING, "%s open error: %s", me->mp3glob.gl_pathv[me->pos], strerror(errno));
 		free(me);
 	}
-	me->tbf = new Mtbf(1, nullptr);
-	me->chnid = curr_id;
-
+	me->tbf = new Mtbf(1, nullptr, 2* MSG_DATA_MAX * 2);
+	me->chnid = curr_id++;
+	me->tbf->TbfStart();
+	
 	return me;
 }
 
 
-mlib_listentry_t *ptr;
 int mlib_getchnlist(mlib_listentry_t **result, int *resnum)
 {
 	char path[PATHSIZE];
 	glob_t globres;
 	int num = 0;
 
+	mlib_listentry_t *ptr;
 	channel_context_t *res;
 	
 
@@ -145,14 +149,14 @@ int mlib_getchnlist(mlib_listentry_t **result, int *resnum)
 		res = path2entry(globres.gl_pathv[i]);
 		if(res != NULL)
 		{
-			syslog(LOG_DEBUG,"path2entruy(): return :%d %s", res->chnid, res->desc);
+			syslog(LOG_DEBUG,"path2entruy(): return %d:%s", res->chnid, res->desc);
 			memcpy(channel + res -> chnid, res, sizeof(*res));
 			ptr[num].chnid = res->chnid;
 			ptr[num].desc = strdup(res->desc);
+			++num;
 		}
-		++num;
-	}
-	
+		
+	}	
 	
 	*resnum = num;
 	*result	= (mlib_listentry_t*)realloc(ptr, sizeof(mlib_listentry_t) * num);
@@ -169,13 +173,15 @@ int mlib_getchnlist(mlib_listentry_t **result, int *resnum)
 }
 int mlib_freechnlist(mlib_listentry_t* mliblistentry)
 {
-	free(ptr);
+	free(mliblistentry);
+	return 0;
 }
 
 static int open_next(chnid_t chnid)
 {
 	if(++channel[chnid].pos == channel[chnid].mp3glob.gl_pathc)
 	{
+		lseek(channel[chnid].fd, 0, SEEK_SET);
 		channel[chnid].pos = 0;
 	}
 
@@ -187,6 +193,7 @@ static int open_next(chnid_t chnid)
 	}
 	else
 	{
+		lseek(channel[chnid].fd, 0, SEEK_SET);
 		channel[chnid].offset = 0;
 		channel[chnid].fd = tmpfd;
 
@@ -197,21 +204,20 @@ static int open_next(chnid_t chnid)
 ssize_t mlib_readchnl(chnid_t chnid, void * buf, size_t size)
 {
 	int tbfsize = 0;
-	channel[chnid].tbf->TbfStart();
-	
-	tbfsize = channel[chnid].tbf->getVaildTokens(size);
-	
+	tbfsize = channel[chnid].tbf->getVaildTokens(1);
+			
+	syslog(LOG_DEBUG, "channel[%d].tbf:gettoken(%d)", chnid, tbfsize);	
 	int len = 0;
 	while(1)
 	{
-		if((len = pread(channel[chnid].fd, buf, tbfsize, channel[chnid].offset)) < 0)
+		if((len = pread(channel[chnid].fd, buf, tbfsize * size, channel[chnid].offset)) < 0)
 		{
 			syslog(LOG_WARNING, "media file %s pread(): %s", channel[chnid].mp3glob.gl_pathv[channel[chnid].pos],strerror(errno));
 			open_next(chnid);
 		}
 		else if(len == 0)
 		{
-			syslog(LOG_DEBUG, "media file %s is over", channel[chnid].mp3glob.gl_pathv[channel[chnid].pos]);
+			syslog(LOG_DEBUG, "thread id:%d, media file %s is over",pthread_self(), channel[chnid].mp3glob.gl_pathv[channel[chnid].pos]);
 			open_next(chnid);
 		}
 		else
@@ -219,13 +225,15 @@ ssize_t mlib_readchnl(chnid_t chnid, void * buf, size_t size)
 			channel[chnid].offset += len;
 			break;
 		}
+		sleep(1);
 	}
 
 	if(tbfsize - len  > 0)
 	{
-		channel[chnid].tbf->pushTokens(tbfsize - len);
+		channel[chnid].tbf->pushTokens(tbfsize);
 
 	}
+	return len;
 }
 
 

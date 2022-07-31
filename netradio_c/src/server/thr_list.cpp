@@ -13,6 +13,8 @@
 static pthread_t tid_list;
 static int nr_list_ent;
 static mlib_listentry_t *list_ent;
+struct sockaddr_in sndaddr; 
+
 
 static void*thr_list(void *p)
 {
@@ -41,6 +43,7 @@ static void*thr_list(void *p)
 
 		entryp->chnid = list_ent[i].chnid;
 		entryp->len = htons(size);
+		strcpy((char*)entryp->desc,list_ent[i].desc);
 		entryp = (msg_listentry_t*)(((char*)entryp) + size);
 	}
 
@@ -48,6 +51,13 @@ static void*thr_list(void *p)
 				.tv_sec = 1,
 				.tv_usec = 0,
 				};
+
+	msg_list_t* tmptr = entlistp;
+	//for(int i = 0; i < nr_list_ent; ++i)
+	//{
+	//	int size = sizeof(msg_listentry_t) + strlen(list_ent[i].desc);
+	//	syslog(LOG_DEBUG, "%d : %s", tmptr->entry->desc);
+	//}
 	int ret = 0;
 	while(1)
 	{
@@ -60,14 +70,17 @@ static void*thr_list(void *p)
 			}
 			else
 			{
-				syslog(LOG_WARNING, "sendto(): %s", strerror(errno));
+				syslog(LOG_WARNING, "thr_list: sendto(): %s", strerror(errno));
 			}
 		}	
 		else
 		{
-			syslog(LOG_DEBUG, "sendto(): ",strerror(0));
+			syslog(LOG_DEBUG, "thr_list: sendto():ret:%d :%s ", ret, strerror(0));
 		}
-		select(-1, NULL, NULL, NULL, &timeout);
+		sleep(1);
+		//	select(-1, NULL, NULL, NULL, &timeout);
+		sched_yield();
+
 	}
 }
 
@@ -86,7 +99,7 @@ int thr_list_create(mlib_listentry_t *mliblist , int size)
 	}
 	return 0;
 }
-int thr_list_destory()
+int thr_list_destroy()
 {
 	pthread_cancel(tid_list);
 	pthread_join(tid_list, NULL);
