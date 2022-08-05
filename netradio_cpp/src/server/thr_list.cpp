@@ -15,52 +15,22 @@
 
 #include<ipv4serverproto.h>
 #include"server_conf.h"
+#include"sockres.h"
 #include"thr_list.h"
 namespace MUZI{
 
-MPRIVATE(ThrMediaList):public MIpv4ServerProto
+MPRIVATE(ThrMediaList):public MIpv4ServerProto, public SockRes
 {
 public:
-	ThrMediaListMPrivate(int sd, struct sockaddr_in& sndaddr)
+	ThrMediaListMPrivate(SockRes * sockres)
 	{
-		this->socksd 		= sd;
-		this->nr_list_ent 	= 0;
-		this->list_ent 		= nullptr;
-		this->sndaddr		= sndaddr;
-	}
-	ThrMediaListMPrivate(int* sd, struct ip_mreqn* mreqnrt, struct sockaddr_in * sndaddrrt)
-	{
-		if(sd == nullptr || mreqnrt == nullptr || sndaddrrt == nullptr)
+		if(sockres != nullptr)
 		{
-			syslog(LOG_WARNING, "ThrMediaList::ThrMediaList(): %s", strerror(EINVAL));
-			errno = EINVAL;
-			throw std::string("ERR_INVAL");
+			this->setSockData(*sockres);
 			return;
-		}
-		int socksd = 0; 
-		if(socksd = socket(AF_INET, SOCK_DGRAM, 0) < 0)
-		{
-			syslog(LOG_ERR, "ThrMediaList::ThrMediaList():socket(): %s", strerror(errno));
-			throw std::string("ERR_SOCK");	
-			return;
-		}
-
-		inet_pton(AF_INET, serverconf.mgroup, &mreqnrt->imr_multiaddr);
-		inet_pton(AF_INET, "0.0.0.0", &mreqnrt->imr_address);
-		mreqnrt->imr_ifindex	= if_nametoindex(serverconf.ifname);	
-		
-		if(setsockopt(socksd, IPPROTO_TP, IP_MULTICAST_IF, mreqnrt, sizeof(*mreqnrt)) < 0)
-		{
-			syslog(LOG_ERR, "ThrMediaList::ThrMediaList():setssockopt(): %s", strerror(errno));
-			throw std::string("ERR_SOCK");	
-			return;
-		}
-		this->mreqn 		= *mreqnrt;
-		sndaddrrt->sin_family 	= AF_INET;
-		sndaddrrt->sin_port 	= htons(atoi(serverconf.rcvport));
-		inet_pton(AF_INET, "0.0.0.0", &sndaddrrt->sin_addr);
-		this->sndaddr		= *sndaddrrt;
-		
+		}	
+		this->SockInit();
+		sockres = new SockRes(this->getSockRes());	
 		
 	}
 	~ThrMediaListMPrivate()
@@ -129,8 +99,8 @@ public:
 		int ret = 0;
 		while(1)
 		{
-			ret = sendto(serversd, entlistp, totalsize, 0 , 
-					(struct sockaddr*)&(thrdataptr->sndaddr), sizeof(struct sockaddr_in));
+			ret = sendto(thrdataptr->getSockfd(), entlistp, totalsize, 0 , 
+					(struct sockaddr*)(thrdataptr->getSockaddr()), sizeof(struct sockaddr_in));
 			if(ret < 0)
 			{
 				if(errno == EINTR || errno == EAGAIN)
@@ -156,26 +126,12 @@ public:
 	pthread_t tid_list;
 	int nr_list_ent;
 	mlib_listentry_t *list_ent;
-	struct sockaddr_in sndaddr;
-	struct ip_mreqn mreqn;
-	int socksd;
 };
 
-ThrMediaList::ThrMediaList(int sd, struct sockaddr_in& sndaddr)
-{
-	this->d = new MPRIVATE(ThrMediaList)(sd, sndaddr);
-}
 
-ThrMediaList::ThrMediaList(int* sd, struct ip_mreqn* mreqnrt, struct sockaddr_in * sndaddrrt)
+ThrMediaList::ThrMediaList(SockRes *sockres)
 {
-	if(sd == nullptr || mreqnrt == nullptr || sndaddrrt == nullptr)
-	{
-		syslog(LOG_WARNING, "ThrMediaList::ThrMediaList(): %s", strerror(EINVAL));
-		errno = EINVAL;
-		throw std::string("ERR_INVAL");
-		return;
-	}
-	this->d = new MPRIVATE(ThrMediaList)(sd, mreqnrt, sndaddrrt);
+	this->d = new MPRIVATE(ThrMediaList)(sockres);
 }
 ThrMediaList::~ThrMediaList()
 {

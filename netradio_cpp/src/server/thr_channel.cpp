@@ -8,49 +8,87 @@
 #include<sys/socket.h>
 #include<netinet/in.h>
 #include<netinet/ip.h>
+#include<arpa/inet.h>
+#include<net/if.h>
+
 #include<ipv4serverproto.h>
 #include"thr_channel.h"
 #include"server_conf.h"
+#include"sockres.h"
 
+#include<iostream>
+#include<vector>
 namespace MUZI{
 
 static int tid_nextpos = 0;
-struct thr_channel_ent_st
+typedef struct ThrChannelEntry
 {
 	chnid_t chnid;
 	pthread_t tid;
+} thr_channel_ent_t ;
+
+struct ThrMediaChannelRes
+{
+	mlib_listentry_t *entry;	
+	MPRIVATE(ThrMediaChannel) *d;
 };
 
-
-MPRIVATE(ThrMediaChannel):public MIpv4ServerProto
+MPRIVATE(ThrMediaChannel):public MIpv4ServerProto, public SockRes 
 {
 private:
-	ThrMediaChannelMPrivate()
+	ThrMediaChannelMPrivate():SockRes()
 	{
 		this->thr_channel.resize(CHNNR, nullptr);
 	}
 public:
-	ThrMediaChannelMPrivate(int sd, struct sockaddr_in& sndaddr)
+	ThrMediaChannelMPrivate(MediaLib& media, SockRes* sockres):ThrMediaChannelMPrivate()
+
 	{
-		this->ThrMediaChannelMPrivate();
-	}
-	ThrMediaChannelMPrivate(int sd, struct ip_mreqn* mreqnrt, struct sockaddr* sndaddr)
-	{
-		this->ThrMediaChannelMPrivate();
+
+		this->media = &media;	
+		if(sockres != nullptr)
+		{
+			this->setSockData(*sockres);	
+			return;
+		}
+		this->SockInit();
+		sockres = new SockRes(this->getSockRes());		
 	}
 	~ThrMediaChannelMPrivate()
 	{
-
+		for(auto& x : this->thr_channel)
+		{
+			pthread_cancel(x->tid);
+			pthread_join(x->tid, NULL);
+			delete x;
+			x = nullptr;
+		}
+		this->media = nullptr;
 	}
-
-publc:
-	static cleanThrChannel(void *p)
+public:
+	int getChannelPos(thr_channel_ent_t* ent)
 	{
-		free((msg_channel_t*)p);	
+		int i = 0;
+		for(auto& x : this->thr_channel)
+		{
+			if(x == nullptr)
+			{
+				x = ent;
+				return i;
+			}
+			++i;
+		}
+		return -1;
+	}
+public:
+	static void cleanThrChannel(void *p)
+	{
+		free(((struct ThrMediaChannelRes*)p) -> entry);
+		delete (struct ThrMediaChannelRes*)p;	
 	}
 	static void* thr_channel_snder(void *ptr)
 	{
-		msg_channel_t *sbufp = (msg_channel_t*)malloc(MSG_CHANNEL_MAX);
+		msg_channel_t *sbufp 			= (msg_channel_t*)malloc(MSG_CHANNEL_MAX);
 		pthread_cleanup_push(cleanThrChannel, sbufp);
 		int len = 0;
 		if(sbufp == NULL)
@@ -58,23 +96,24 @@ publc:
 			syslog(LOG_ERR,"malloc():%s\n", strerror(errno));
 			exit(1);
 		}
-		sbufp->chnid = ((msg_channel_t*)ptr)->chnid;
-		
-		int ret = 0;
+		sbufp->chnid 				= ((struct ThrMediaChannelRes*)ptr)->entry->chnid;
+		struct ThrMediaChannelRes* res 		= (struct ThrMediaChannelRes*)ptr;
+		MPRIVATE(ThrMediaChannel)* thrdataptr 	= res->d;	
+		int ret 				= 0;
 		while(1)
 		{
-			len = mlib_readchnl((sbufp->chnid, sbufp->data, MSG_DATA_MAX);
+			len = thrdataptr->media->readchnl(sbufp->chnid, sbufp->data, MSG_DATA_MAX);
 
-			if((ret = sendto(serversd,sbufp, len + sizeof(chnid_t), 0, 
-						(struct sockaddr*)&sndaddr,sizeof(sndaddr))) < 0 )
+			if((ret = sendto(thrdataptr->getSockfd(),sbufp, len + sizeof(chnid_t), 0, 
+						(struct sockaddr*)thrdataptr->getSockaddr(),sizeof(struct sockaddr_in))) < 0 )
 			{
 				syslog(LOG_ERR, "thr_channel(%d):sendto():%s\n", 
-						((msg_channel_t*)ptr)->chnid, strerror(errno));
+						res->entry->chnid, strerror(errno));
 			}
 			else
 			{
 				syslog(LOG_DEBUG, "thread id %d, thr_channel(%d):sendto():ret:%d\n",
-						pthread_self(), ((msg_channel_t*)ptr)->chnid,ret);
+						pthread_self(), res->entry->chnid,ret);
 			}
 			sched_yield();
 			//主动出让调度期
@@ -87,42 +126,56 @@ publc:
 	}
 
 public:
-	int sd;
-	std::vector<struct thr_channel_ent_st*> thr_channel[CHNNR];
-	struct sockaddr_in sndaddr;
-	struct ip_mreqn mreqn;
+	std::vector<thr_channel_ent_t*> thr_channel;
+	MediaLib* media;
 };
 
-
-int ThrMeidaChannel::create(mlib_listentry_t *ptr )
+ThrMediaChannel::ThrMediaChannel(MediaLib& media, SockRes* sockres)
 {
-	int err = 0;
-	if((err = pthread_create(&this->d->thr_channel[tid_nextpos].tid, NULL, 
-					this->d->thr_channel_snder, ptr)))
+	this->d = new ThrMediaChannelMPrivate(media, sockres);
+}
+ThrMediaChannel::~ThrMediaChannel()
+{
+	delete this->d;
+}
+
+int ThrMediaChannel::create(mlib_listentry_t *ptr )
+{
+	thr_channel_ent_t* me 		= new thr_channel_ent_t;
+	struct ThrMediaChannelRes *res 	= new struct ThrMediaChannelRes;
+	res->entry 			= ptr;
+	res->d				= this->d;
+	int err 			= 0;
+	int tid_nextpos 		= this->d->getChannelPos(me);
+	if((err = pthread_create(&me->tid, NULL, 
+					this->d->thr_channel_snder, res)))
 	{
 		syslog(LOG_WARNING,"pthread_create():%s", strerror(err));
 		return -err;
 	}
-	thr_channel[tid_nextpos].chnid = ptr->chnid;
-	tid_nextpos++;
+	me->chnid = ptr->chnid;
 	return 0;
 }
 
-int ThrMediaChannel::destroyone(mlib_listentry_t * ptr)
+int ThrMediaChannel::destroyonce(mlib_listentry_t * ptr)
 {
 	
 	for(int i = 0; i < CHNNR; ++i)
-	{	
-		if(thr_channel[i].chnid == ptr->chnid)
-		{
-			if(pthread_cancel(thr_channel[i].tid) < 0)
+	{
+		if(this->d->thr_channel[i] != nullptr)
+		{	
+			if(this->d->thr_channel[i]->chnid == ptr->chnid)
 			{
-				syslog(LOG_ERR,"pthread_cancel()): the thread of channel %d", ptr->chnid);
-				return -ESRCH;
-			}	
-			pthread_join(thr_channel[i].tid, NULL);
-			thr_channel[i].chnid = -1;
-			return 0;
+				if(pthread_cancel(this->d->thr_channel[i]->tid) < 0)
+				{
+					syslog(LOG_ERR,"pthread_cancel()): the thread of channel %d", 
+							ptr->chnid);
+					return -ESRCH;
+				}	
+				pthread_join(this->d->thr_channel[i]->tid, NULL);
+				delete this->d->thr_channel[i];
+				return 0;
+			}
 		}
 	}
 	return -1;
@@ -130,17 +183,15 @@ int ThrMediaChannel::destroyone(mlib_listentry_t * ptr)
 
 int ThrMediaChannel::destroyall()
 {
-	for(int i = 0; i < CHNNR; ++i)
+	for(auto& x : this->d->thr_channel)
 	{
-		if(pthread_cancel(thr_channel[i].tid) < 0)
+		if(x != nullptr)
 		{
-			syslog(LOG_ERR,"pthread_cancel()): the thread of channel %d", thr_channel[i].chnid);
-			return -ESRCH;
-		}	
-		pthread_join(thr_channel[i].tid, NULL);
-		thr_channel[i].chnid = -1;
-		
-	
+			pthread_cancel(x->tid);
+			pthread_join(x->tid, NULL);
+			delete x;
+			x = nullptr;
+		}
 	}
 	return 0;
 }

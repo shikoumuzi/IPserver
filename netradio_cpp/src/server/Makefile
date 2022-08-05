@@ -9,11 +9,14 @@ DEFAULT_OPERATOR =  $(CC) $(CFLAGS) $^ -c -o $@
 
 all:Mserver
 
-Mserver: Mtbf.o medialib.o thr_list.o thr_channel.o server.o
+Mserver: Mtbf.o sockres.o medialib.o thr_list.o thr_channel.o server.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 Mtbf.o:../include/tbf/threadtbf/Mtbf.cpp
 	$(CC) $(LIBLINKS)  $^ -c -o $@ 
+
+sockres.o:sockres.cpp
+	$(DEFAULT_OPERATOR) 
 
 medialib.o:medialib.cpp
 	$(CC) $(CFLAGS) $^ -c -o $@

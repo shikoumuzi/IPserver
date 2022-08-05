@@ -24,7 +24,7 @@ protected:
 	MediaLib(int maxtokens);
 	MediaLib(const MediaLib& object) = delete;
 	~MediaLib();
-protected:
+public:
 	int getchnlist(mlib_listentry_t **result, int *resnum, std::vector<std::string>& duff_format);	
 	ssize_t readchnl(chnid_t chnid, void * buff, size_t size);
 protected:

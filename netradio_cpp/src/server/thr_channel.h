@@ -2,20 +2,26 @@
 #define __MUTHR_CHANNEL_H__
 
 #include"medialib.h"
-
+#include"sockres.h"
 namespace MUZI{
 
-class ThrMediaChannel:MIpv4ServerProto{
+class ThrMediaChannel:public MIpv4ServerProto, public SockRes
+{
 public:
-	ThrMediaChannel(int sd, struct sndaddr& sndaddr);
-	ThrMediaChannel(int sd, struct ip_mreqn* mreqnrt, struct sndaddr* sndaddrrt);
+	static ThrMediaChannel* getThrMediaChannel
+					(MediaLib& media. SockRes *res)
+	{
+		return new ThrMediaChannel(media, res);
+	}	
+public:
+	ThrMediaChannel(MediaLib& media, SockRes* sockres);
 	~ThrMediaChannel();
 public:
 	int create(mlib_listentry_t* chnllist);
 	int destroyonce(mlib_listentry_t* chnllist);
-	int destroy_all();
+	int destroyall();
 protected:
-	MPRIVATE(ThrMediaChannel)i *d;
+	MPRIVATE(ThrMediaChannel) *d;
 };
 };
 #endif
