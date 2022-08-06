@@ -58,12 +58,19 @@ public:
 	{
 		for(auto& x : this->thr_channel)
 		{
-			pthread_cancel(x->tid);
-			pthread_join(x->tid, NULL);
-			delete x;
-			x = nullptr;
+			if( x != nullptr)
+			{
+
+				pthread_cancel(x->tid);
+				pthread_join(x->tid, NULL);
+				delete x;
+				x = nullptr;
+			}
 		}
 		this->media = nullptr;
+		//this->~SockRes();
+		//这里不需要自行调用父类的析沟函数
+		//delete会自行调用
 	}
 public:
 	int getChannelPos(thr_channel_ent_t* ent)
@@ -83,7 +90,7 @@ public:
 public:
 	static void cleanThrChannel(void *p)
 	{
-		free(((struct ThrMediaChannelRes*)p) -> entry);
+		//free(((struct ThrMediaChannelRes*)p) -> entry);
 		delete (struct ThrMediaChannelRes*)p;	
 	}
 	static void* thr_channel_snder(void *ptr)
@@ -117,10 +124,11 @@ public:
 			}
 			sched_yield();
 			//主动出让调度期
+			//这里如果设置了pthread_testcancel的话，
+			//当调用pthread_cancel时会直接取消线程
+			//导致pthread_join段错误
 			++sbufp->id;
 		}
-
-
 		pthread_cleanup_pop(1);
 		pthread_exit(NULL);
 	}
@@ -147,6 +155,7 @@ int ThrMediaChannel::create(mlib_listentry_t *ptr )
 	res->d				= this->d;
 	int err 			= 0;
 	int tid_nextpos 		= this->d->getChannelPos(me);
+
 	if((err = pthread_create(&me->tid, NULL, 
 					this->d->thr_channel_snder, res)))
 	{

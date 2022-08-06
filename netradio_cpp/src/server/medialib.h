@@ -8,7 +8,7 @@ namespace MUZI{
 struct MlibListEntry
 {
 	chnid_t chnid;
-	std::string desc;
+	std::string* desc;
 };
 
 using mlib_listentry_t = struct MlibListEntry;
@@ -23,8 +23,8 @@ public:
 protected:
 	MediaLib(int maxtokens);
 	MediaLib(const MediaLib& object) = delete;
-	~MediaLib();
 public:
+	~MediaLib();
 	int getchnlist(mlib_listentry_t **result, int *resnum, std::vector<std::string>& duff_format);	
 	ssize_t readchnl(chnid_t chnid, void * buff, size_t size);
 protected:

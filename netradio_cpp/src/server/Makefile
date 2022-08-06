@@ -9,7 +9,7 @@ DEFAULT_OPERATOR =  $(CC) $(CFLAGS) $^ -c -o $@
 
 all:Mserver
 
-Mserver: Mtbf.o sockres.o medialib.o thr_list.o thr_channel.o server.o
+Mserver: Mtbf.o sockres.o medialib.o thr_list.o thr_channel.o server.o mserver.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 Mtbf.o:../include/tbf/threadtbf/Mtbf.cpp
@@ -30,6 +30,9 @@ thr_channel.o: thr_channel.cpp
 
 server.o:server.cpp
 	$(CC) $(CFLAGS) $^ -c -o $@ 
+
+mserver.o:mserver.cpp
+	$(DEFAULT_OPERATOR)
 
 clean:
 	rm -rf *.o Mserver

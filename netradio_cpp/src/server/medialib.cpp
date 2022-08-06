@@ -35,6 +35,16 @@ struct ChannelContext
 	off_t offset;
 	Mtbf* tbf;	
 };
+
+server_conf_t serverconf = {
+			.rcvport 	= DEFAULT_RCVPORT,
+			.mgroup	 	= DEFAULT_MGROUP,
+			.media_dir	= DEFAULT_MEDIADIR,
+			.ifname		= DEFAULT_IF,
+			.runmod		= RUN_DEAMON};
+
+
+
 using channel_context_t = struct ChannelContext;
 
 MPRIVATE(MediaLib):public MIpv4ServerProto
@@ -51,15 +61,18 @@ public:
 	{
 		for(auto& x : this->channel)
 		{
-			globfree(&x->musicglob);
-			free(x->desc);
-			x->tbf = nullptr;
-			delete x;
-			x = nullptr;
+			if(x != nullptr)
+			{	
+				globfree(&x->musicglob);
+				free(x->desc);
+				x->tbf = nullptr;
+				delete x;
+				x = nullptr;
+			}
 		}
 		for(auto& x : this->listentrybuff)
 		{
-			delete x;
+			free(x);
 			x = nullptr;
 		}
 		this->tbf->Tbfstop();
@@ -91,7 +104,7 @@ public:
 
 		std::fstream fs_desc;
 		fs_desc.open(pathstr, std::ios::in);
-		if(fs_desc.is_open())
+		if(!fs_desc.is_open())
 		{
 			syslog(LOG_INFO,"fopen(): %s is not a channel dir(Can't find desc.txt)",path);
 			return NULL;
@@ -164,7 +177,7 @@ public:
 	}
 public:
 	std::vector<channel_context_t*> channel;
-	std::vector<MUZI::MediaLib::mlib_listentry_t*> listentrybuff;
+	std::vector<mlib_listentry_t*> listentrybuff;
 	Mtbf* tbf;
 };
 
@@ -177,6 +190,7 @@ MediaLib::MediaLib(int maxtokens)
 }
 MediaLib::~MediaLib()
 {
+	
 	delete this->d;
 }
 
@@ -193,10 +207,10 @@ int MediaLib::getchnlist(mlib_listentry_t **result, int *resnum, std::vector<std
 		return -1;
 	}	
 	
-	mlib_listentry_t *ptr = new mlib_listentry_t[globres.gl_pathc];
+	mlib_listentry_t *ptr = (mlib_listentry_t*)malloc(sizeof(mlib_listentry_t) * globres.gl_pathc);
 	if(ptr == NULL)
 	{
-		syslog(LOG_ERR, "new failed");
+		syslog(LOG_ERR, "malloc failed");
 		return -1;
 	}
 
@@ -206,24 +220,40 @@ int MediaLib::getchnlist(mlib_listentry_t **result, int *resnum, std::vector<std
 		res = this->d->path2entry(globres.gl_pathv[i], duff_format);
 		if(res != NULL)
 		{
-			syslog(LOG_DEBUG,"path2entruy(): return %d:%s", res->chnid, res->desc);
+			syslog(LOG_DEBUG,"path2entry(): return %d:%s", res->chnid, res->desc);
 			ptr[num].chnid	= res->chnid;
-			ptr[num].desc 	= strdup(res->desc);
+			
+			
+			char *tmp = strdup(res->desc);
+			if(tmp == NULL)
+			{
+				
+				syslog(LOG_DEBUG, "strdup(): err %s", strerror(errno));
+			}
+			
+			ptr[num].desc 	= new std::string(tmp);
+			//new 可以将类内包含的所有其他类对象都一并调用构造函数
+			
+			
 			++num;
 		}
 		
 	}	
 	
 	*resnum = num;
-	*result	= (mlib_listentry_t*)realloc(ptr, sizeof(mlib_listentry_t) * num);
+	*result	= (mlib_listentry_t*)realloc(ptr, sizeof(mlib_listentry_t) * (num));
+	
 	if(*result == NULL)
 	{
 		syslog(LOG_ERR, "realloc(): %s", strerror(errno));
 		return -1;
 	}
+	
 	this->d->listentrybuff.push_back(ptr);
 	ptr = nullptr;
 	globfree(&globres);
+	
+	
 	return 0;
 
 }

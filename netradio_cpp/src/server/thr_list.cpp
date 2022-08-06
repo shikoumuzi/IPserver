@@ -22,7 +22,7 @@ namespace MUZI{
 MPRIVATE(ThrMediaList):public MIpv4ServerProto, public SockRes
 {
 public:
-	ThrMediaListMPrivate(SockRes * sockres)
+	ThrMediaListMPrivate(SockRes * sockres):SockRes()
 	{
 		if(sockres != nullptr)
 		{
@@ -63,7 +63,7 @@ public:
 
 		for(int i = 0 ; i < thrdataptr->nr_list_ent; ++i)
 		{
-			totalsize += sizeof(msg_listentry_t) + thrdataptr->list_ent[i].desc.size();
+			totalsize += sizeof(msg_listentry_t) + thrdataptr->list_ent[i].desc->size();
 		}
 
 		entlistp 		= (msg_list_t*)malloc(totalsize);
@@ -77,11 +77,11 @@ public:
 
 		for(int i = 0; i < thrdataptr->nr_list_ent; ++i)
 		{
-			int partsize 	= sizeof(msg_listentry_t) + thrdataptr->list_ent[i].desc.size();
+			int partsize 	= sizeof(msg_listentry_t) + thrdataptr->list_ent[i].desc->size();
 
 			entryp->chnid 	= thrdataptr->list_ent[i].chnid;
 			entryp->len 	= htons(partsize);
-			strcpy((char*)entryp->desc,thrdataptr->list_ent[i].desc.c_str());
+			strcpy((char*)entryp->desc,thrdataptr->list_ent[i].desc->c_str());
 			entryp 		= (msg_listentry_t*)(((char*)entryp) + partsize);
 		}
 
@@ -117,6 +117,9 @@ public:
 				syslog(LOG_DEBUG, "thr_list: sendto():ret:%d :%s ", ret, strerror(0));
 			}
 			select(0, NULL, NULL, NULL, &timeout);
+			sleep(1);
+			
+			pthread_testcancel();
 			sched_yield();
 		}
 		pthread_cleanup_pop(1);

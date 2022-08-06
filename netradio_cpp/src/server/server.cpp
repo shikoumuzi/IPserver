@@ -25,29 +25,46 @@
 
 namespace MUZI{
 
+MPRIVATE(Server) *dataptr = nullptr;
 MPRIVATE(Server)
 {
 public:
-	ServerMPrivate()
+	ServerMPrivate(Server* parent)
 	{
-		this->sockres 	= new sockres;
+		this->parent	= parent;
+		this->sockres 	= new SockRes;
 		sockres->SockInit();
 		this->medialib 	= MUZI::MediaLib::getMediaLib();
 		this->medialist = MUZI::ThrMediaList::getThrMediaList(this->sockres);
-		this->channel 	= MUZI::ThrMediaChannel::getThrMediaChannel(*this->medialib, this->scokres);	
+		this->channel 	= MUZI::ThrMediaChannel::getThrMediaChannel(*this->medialib, this->sockres);
 	}
 	~ServerMPrivate()
 	{
 		delete this->channel;
+		
 		delete this->medialist;
+		
 		delete this->medialib;
+		
 		delete this->sockres;
+		
 	}
 public:
-	static deamon_exit()
+	static void deamon_exit(int signum)
 	{
-			
+		dataptr->parent->~Server();	
 	}
+	static void ServerHelpPrintf()
+	{
+		std::cout
+			<<"*-M --mgroup		指定多播组"
+			<<"*-P --port 		指定端口"
+			<<"*-F --front 		前台运行"
+			<<"*-D --		指定媒体库"
+			<<"*-I --interface	指定网络设备"
+			<<"*-H --help		查看帮助"<<std::endl;
+	}
+
 	int deamonize()
 	{
 		this->pid = fork();
@@ -92,7 +109,11 @@ public:
 			return 0;
 		}
 	}
-
+	int getChannelList()
+	{
+		return this->medialib->getchnlist(&this->chnllist, 
+					&this->listsize, this->duffformat);
+	}	
 public:
 	pid_t pid;
 	ThrMediaChannel* channel;
@@ -102,24 +123,35 @@ public:
 	std::vector<std::string> duffformat;
 	mlib_listentry_t *chnllist;
 	int listsize;
+	Server* parent;
 };
 
-Server::Server(int argc, char* argv[]):d(new MPRIVATE(Server))
-{
+Server::Server(int argc, char* argv[])
+{	
+	if(dataptr != nullptr)
+	{
+		return ;
+	}
 	this->analyseOpt(argc, argv);
 
-	openlog("netradio_cpp", LOG_PIS | LOG_PERROR, LOG_DAEMON);
+	this->d = new MPRIVATE(Server)(this);
+	dataptr = this->d;
+
+
+	openlog("netradio_cpp", LOG_PID | LOG_PERROR, LOG_DAEMON);
 	switch(serverconf.runmod)
         {
         case RUN_DEAMON:
                 {
-                        int dearet = 0;
-                        if((dearet = this->d->deamonize()) < 0)
-                        {
-                                perror("fork():");
-                                return -errno;
-                        }
-                        break;
+//                        int dearet = 0;
+//                        if((dearet = this->d->deamonize()) < 0)
+//                        {
+//                                perror("fork():");
+//				syslog(LOG_ERR, "Server::Server(): fork() failed. err: %s",
+//						strerror(errno));	
+//				return;
+//			}
+//                        break;
                 }
         case RUN_FOREGROUND:
                 {
@@ -135,19 +167,24 @@ Server::Server(int argc, char* argv[]):d(new MPRIVATE(Server))
         }
 
 }
-Server::~Server();
-int Server::SigInit(int signum[])
+Server::~Server()
+{
+	delete this->d;
+	closelog();
+}
+int Server::SigInit(std::vector<int>& signum)
 {
 	struct sigaction sigact;
-	sigact.sa_handler = this->deamon_exit();	
+	sigact.sa_handler = this->d->deamon_exit;	
 	sigact.sa_flags   = 0;
 	sigemptyset(&sigact.sa_mask);
-	for(int* p = signum; p != nullptr; ++p)
+	for(auto& x : signum)
 	{
-		sigaddset(&sigact.sa_mask, *p);
-		sigaction(*p, &sigact, NULL);
+		sigaddset(&sigact.sa_mask, x);
+		sigaction(x, &sigact, NULL);
 	}
 
+	return 0;
 }
 int Server::analyseOpt(int argc, char* argv[])
 {
@@ -182,22 +219,61 @@ int Server::analyseOpt(int argc, char* argv[])
                                break;
                        }
                 case 'H':{
-                               ServerHelpPrintf();
+                               this->d->ServerHelpPrintf();
                                break;
                        }
                 default:
                        abort();
-                       break;
-                }
+                       return -1;
+		}
         }
 	
-	
+	return 0;	
 }
 
-int Server::assignFormat(std::vector<std::string>& duffforamt);
+int Server::assignFormat(std::vector<std::string>& duffformat)
+{
+	for(int i = 0; i < duffformat.size(); ++i)
+		this->d->duffformat.push_back(duffformat[i]);
+	return 0;
+}
+int Server::getChnlList()
+{
+	if(this->d->getChannelList() < 0)
+	{
+		syslog(LOG_ERR, 
+			"Server::getChannelList(): get channel list form media failed. err:%s",
+			strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
 int Server::createListThr()
-{}
+{
+	if(this->d->medialist->create(this->d->chnllist, this->d->listsize) < 0)
+	{
+
+		syslog(LOG_ERR, 
+			"Server::createListThr(): channel list thread create failed. err: %s",
+			strerror(errno));
+		return -1;
+	}
+	return 0;
+}
 int Server::createChnlThr()
-{}
+{
+	for(int i = 0; i < this->d->listsize; ++i)
+	{
+		if(this->d->channel->create(this->d->chnllist + i) < 0)
+		{
+			syslog(LOG_ERR,
+				"Server::createChnlThr(): channel thread create failed: err:%s",
+				strerror(errno));
+			return -1;
+		}
+	}
+	return 0;
+}
 
 };

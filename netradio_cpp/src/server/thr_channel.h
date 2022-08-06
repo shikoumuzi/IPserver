@@ -9,7 +9,7 @@ class ThrMediaChannel:public MIpv4ServerProto, public SockRes
 {
 public:
 	static ThrMediaChannel* getThrMediaChannel
-					(MediaLib& media. SockRes *res)
+					(MediaLib& media, SockRes *res)
 	{
 		return new ThrMediaChannel(media, res);
 	}	

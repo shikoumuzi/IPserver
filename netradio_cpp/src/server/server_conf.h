@@ -5,6 +5,8 @@
 #define DEFAULT_MEDIADIR	"/var/media/"
 #define DEFAULT_IF		"eth0"
 
+
+#include<iostream>
 namespace MUZI{
 enum{
 	RUN_DEAMON = 0x00000001UL,
@@ -29,5 +31,13 @@ typedef struct ServerConf
 extern server_conf_t serverconf;
 extern int serversd;
 extern struct sockaddr_in sndaddr;
+
+
+
+template<typename T>
+void mcout(T x)
+{
+	std::cout<< x << std::endl;
+}
 };
 #endif
