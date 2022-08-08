@@ -6,7 +6,9 @@
 #include<ipv4serverproto.h>
 #define __MUDEFAULT_PLAYERCMD__ "mplayer -  > /dev/null"
 //将mpg123的文字输出到空设备上
+namespace MUZI{
 
+const int CHANNEL_BUFF = 10;
 typedef struct ClientConfST
 {
 
@@ -30,6 +32,20 @@ static void ClientHelpPrintf()
 		<< std::endl;
 }
 
+class Client
+{
+public:
+	Client(int argc, char* argv[]);
+	~Client();
+public:
+	int analyseOpt(int argc, char* argv[]);
+	int SockInit();
+	int create();
+	int writen(char *buff, int buffsize);
+	int start();
+protected:
+	MPRIVATE(Client) *d;
+};
 
-
+}
 #endif
