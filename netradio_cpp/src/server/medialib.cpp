@@ -109,7 +109,7 @@ public:
 			syslog(LOG_INFO,"fopen(): %s is not a channel dir(Can't find desc.txt)",path);
 			return NULL;
 		}	
-		fs_desc >> linebuff;	
+		fs_desc.getline(linebuff, PATHSIZE + 4);	
 		fs_desc.close();
 
 		channel_context_t *me = new channel_context_t;
